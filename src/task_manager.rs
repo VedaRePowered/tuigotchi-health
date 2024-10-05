@@ -16,15 +16,22 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, Duration};
 
-use crate::task::TaskType;
+use crate::task::{Task, TaskType};
+use crate::config::Config;
 
-pub struct TaskManager {}
+use color_eyre::Result;
+
+const TASK_THRESHOLD: Duration = Duration::minutes(30);
+
+pub struct TaskManager {
+    tasks: Vec<Task>
+}
 
 pub struct TaskDue {
     ty: TaskType,
-    due: DateTime<Local>,
+    when: DateTime<Local>,
 }
 
 pub struct Tasks {
@@ -34,7 +41,37 @@ pub struct Tasks {
 }
 
 impl TaskManager {
-    fn get_tasks(&self) -> Tasks {
-        unimplemented!()
+    pub fn new(config: &mut Config) -> Self {
+        Self { tasks: std::mem::replace(&mut config.tasks, vec![]) }
+    }
+    pub fn get_tasks(&self, now: DateTime<Local>) -> Result<Tasks> {
+        let mut tasks = Tasks {
+            past: vec![],
+            current: vec![],
+            upcoming: vec![]
+        };
+
+        let now = Local::now();
+
+        for task in &self.tasks {
+            let task_due = TaskDue {
+                ty: task.ty(),
+                // We actually want to find the "next instance" in
+                // relation to when it was last done, rather than now;
+                // this gives the time when the task *should* be done,
+                // or should have been done
+                when: task.schedule().next_instance(task.last_done)?
+            };
+
+            if task_due.when > now {
+                tasks.upcoming.push(task_due);
+            } else if now - task_due.when < TASK_THRESHOLD {
+                tasks.current.push(task_due);
+            } else {
+                tasks.past.push(task_due);
+            }
+        }
+
+        Ok(tasks)
     }
 }

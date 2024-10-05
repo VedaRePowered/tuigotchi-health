@@ -14,14 +14,19 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
-*/
+ */
 
-#[derive(Debug)]
+use serde::{Serialize, Deserialize};
+
+use crate::task::Task;
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub character: CharacterChoice,
+    pub tasks: Vec<Task>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CharacterChoice {
     DebugGuy,
 }
@@ -43,6 +48,7 @@ impl Config {
     pub fn load_config() -> Self {
         Self {
             character: CharacterChoice::DebugGuy,
+            tasks: vec![]
         }
     }
 }

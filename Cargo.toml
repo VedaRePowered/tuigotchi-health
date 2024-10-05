@@ -4,12 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-chrono = "0.4.38"
+chrono = { version = "0.4.38", features = [ "serde" ] }
 color-eyre = "0.6.3"
 crossterm = "0.28.1"
 directories = "5.0.1"
+humantime = "2.1.0"
+humantime-serde = "1.1.1"
 itertools = "0.13.0"
 log = "0.4.22"
-serde = "1.0.210"
+serde = { version = "1.0.210", features = [ "derive" ] }
 serde_yaml = "0.9.34"
 simplelog = "0.12.2"
