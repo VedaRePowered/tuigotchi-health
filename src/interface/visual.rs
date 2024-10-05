@@ -18,32 +18,33 @@ along with Tamagotchi Health. If not, see
 
 use std::{
     collections::HashMap,
+    ops::Range,
+    str::FromStr,
     time::{Duration, Instant},
 };
 
-use color_eyre::Result;
-use log::info;
+use color_eyre::{eyre::bail, Result};
+use crossterm::{cursor::MoveTo, queue, style::Print};
 
 use crate::{config::CharacterChoice, task::TaskType};
 
 #[derive(Debug)]
 pub struct LilGuyState {
-    animations: HashMap<String, Vec<AnimationFrame>>,
+    animations: HashMap<LilGuyAnimation, Vec<AnimationFrame>>,
     current_animation: LilGuyAnimation,
-    animation_frame: u32,
+    animation_frame: usize,
     next_frame_time: Instant,
-    lil_guy_pos: (u32, u32),
+    pos: (i32, i32),
 }
 
-pub fn load_animations(text: &str) -> Result<HashMap<String, Vec<AnimationFrame>>> {
-    Ok(text
-        .lines()
+fn load_animations(text: &str) -> Result<HashMap<LilGuyAnimation, Vec<AnimationFrame>>> {
+    text.lines()
         .collect::<Vec<_>>()
         .chunk_by(|_a, b| !b.starts_with("animation "))
         .map(|animation_lines| {
-            let animation_name = animation_lines[0]
+            let animation_name: LilGuyAnimation = animation_lines[0]
                 .trim_start_matches("animation ")
-                .to_string();
+                .parse()?;
             let animation_frames: Vec<_> = animation_lines[1..]
                 .chunk_by(|_a, b| !b.starts_with("frame "))
                 .map(|frame_lines| {
@@ -54,16 +55,13 @@ pub fn load_animations(text: &str) -> Result<HashMap<String, Vec<AnimationFrame>
                     let frame_time = Duration::from_secs_f64(frame_time / 1000.0);
                     Ok(AnimationFrame {
                         duration: frame_time,
-                        lines: frame_lines[1..]
-                            .into_iter()
-                            .map(|s| s.to_string())
-                            .collect(),
+                        lines: frame_lines[1..].iter().map(|s| s.to_string()).collect(),
                     })
                 })
                 .collect::<Result<_>>()?;
             Ok((animation_name, animation_frames))
         })
-        .collect::<Result<_>>()?)
+        .collect::<Result<_>>()
 }
 
 #[derive(Debug, Default)]
@@ -72,12 +70,30 @@ pub struct AnimationFrame {
     lines: Vec<String>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub enum LilGuyAnimation {
     #[default]
     Idle,
-    Walk,
+    WalkLeft,
+    WalkRight,
+    Sad(u32),
     Task(TaskType),
+}
+
+impl FromStr for LilGuyAnimation {
+    type Err = color_eyre::eyre::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(match s.to_lowercase().as_str() {
+            "idle" => Self::Idle,
+            "walk/left" => Self::WalkLeft,
+            "walk/right" => Self::WalkRight,
+            "sad/0" => Self::Sad(0),
+            "sad/1" => Self::Sad(1),
+            "task/general" => Self::Task(TaskType::Other(String::new())),
+            _ => bail!("Unknown task type: {s}"),
+        })
+    }
 }
 
 impl LilGuyState {
@@ -87,8 +103,53 @@ impl LilGuyState {
             current_animation: LilGuyAnimation::Idle,
             animation_frame: 0,
             next_frame_time: Instant::now(),
-            lil_guy_pos: (0, 0),
+            pos: (0, 0),
         })
     }
-    pub fn update(&mut self) {}
+    pub fn update(
+        &mut self,
+        happiness: f32,
+        ongoing_task: Option<TaskType>,
+        room_bounds: (Range<i32>, Range<i32>),
+    ) {
+        let now = Instant::now();
+        if self.pos.0 < room_bounds.0.start {
+            self.current_animation = LilGuyAnimation::WalkRight;
+        } else if self.pos.0 > room_bounds.0.end {
+            self.current_animation = LilGuyAnimation::WalkLeft;
+        } else if let Some(task) = ongoing_task {
+            self.current_animation = LilGuyAnimation::Task(task);
+        } else if happiness < 0.6 {
+            let sad_level = (((1.0 - happiness / 0.6) * 2.0).floor() as u32).clamp(0, 1);
+            self.current_animation = LilGuyAnimation::Sad(sad_level);
+        }
+        let anim = &self.animations[&self.current_animation];
+        if now > self.next_frame_time {
+            self.animation_frame += 1;
+            if self.animation_frame >= anim.len() {
+                self.animation_frame = 0;
+            }
+            self.next_frame_time = now + anim[self.animation_frame].duration;
+            match self.current_animation {
+                LilGuyAnimation::WalkLeft => self.pos.0 -= 1,
+                LilGuyAnimation::WalkRight => self.pos.0 += 1,
+                _ => {}
+            }
+        }
+    }
+    pub fn render(&self, center: (i32, i32)) -> Result<()> {
+        let pos = (center.0 + self.pos.0, center.1 + self.pos.1);
+        let frame = &self.animations[&self.current_animation][self.animation_frame];
+        for (y, line) in frame.lines.iter().enumerate() {
+            queue!(
+                std::io::stdout(),
+                MoveTo(
+                    pos.0.clamp(0, 65535) as u16,
+                    (pos.1 + (y as i32)).clamp(0, 65535) as u16
+                ),
+                Print(line),
+            )?;
+        }
+        Ok(())
+    }
 }

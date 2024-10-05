@@ -16,8 +16,9 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
-use std::time::Duration;
+use std::{io::Write, time::Duration};
 
+use chrono::Local;
 use color_eyre::Result;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
@@ -27,13 +28,17 @@ use crossterm::{
 use log::info;
 use visual::LilGuyState;
 
-use crate::config::Config;
+use crate::{
+    config::Config,
+    task_manager::{TaskManager, Tasks},
+};
 
 mod visual;
 
 #[derive(Debug)]
 pub struct InterfaceState {
     lil_guy: LilGuyState,
+    tasks: Tasks,
 }
 
 impl InterfaceState {
@@ -43,11 +48,12 @@ impl InterfaceState {
         terminal::enable_raw_mode()?;
         Ok(InterfaceState {
             lil_guy: LilGuyState::new(conf.character)?,
+            tasks: Tasks::default(),
         })
     }
     /// Update the state of the interface, will run every ~100ms
     /// returns false if the program should exit.
-    pub fn update(&mut self) -> Result<bool> {
+    pub fn update(&mut self, task_manager: &TaskManager) -> Result<bool> {
         if event::poll(Duration::from_millis(100))? {
             info!("Hi!");
             let ev = event::read()?;
@@ -63,7 +69,26 @@ impl InterfaceState {
                 _ => info!("Unused event: {ev:?}"),
             }
         }
+        let now = Local::now();
+        self.tasks = task_manager.get_tasks(now)?;
+        let happiness = 1.0
+            - self
+                .tasks
+                .past
+                .iter()
+                .map(|task| {
+                    // This formula is not special its just a random thing I came up with
+                    ((now - task.when).num_seconds() as f32 / 60.0 / 60.0).sqrt()
+                })
+                .sum::<f32>()
+                .clamp(0.0, 1.0);
+        self.lil_guy.update(happiness, None, (0i32..20, 0i32..10));
         Ok(true)
+    }
+    pub fn render(&self) -> Result<()> {
+        self.lil_guy.render((10, 10))?;
+        std::io::stdout().flush()?;
+        Ok(())
     }
 }
 

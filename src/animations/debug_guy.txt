@@ -1,5 +1,5 @@
 animation idle
-frame 2000ms
+frame 3000ms
 /. .\
 \ v /
  /+\
@@ -15,7 +15,49 @@ frame 200ms
   |
  / \
 /   \
-animation walk
+animation sad/0
+frame 3000ms
+/. .\
+\ ^ /
+ /+\
+ |||
+  |
+ / \
+/   \
+frame 200ms
+/v v\
+\ ^ /
+ /+\
+ |||
+  |
+ / \
+/   \
+animation sad/1
+frame 1000ms
+/v v\
+/ ^ \
+\-+-/
+  |
+  |
+ / \
+/   \
+frame 1500ms
+/v v\
+/'^ \
+\-+-/
+  |
+  |
+ / \
+/   \
+frame 500ms
+/v v\
+\/^ \
+/-+-/
+  |
+  |
+ / \
+/   \
+animation walk/left
 frame 500ms
 /.  \
 \-  /
@@ -27,6 +69,23 @@ frame 500ms
 frame 500ms
 /.  \
 \-  /
+ /+\
+ |||
+  |
+ / \
+ | | 
+animation walk/right
+frame 500ms
+/  .\
+\  -/
+ /+\
+/ | \
+  |
+ / \
+/   \
+frame 500ms
+/  .\
+\  -/
  /+\
  |||
   |

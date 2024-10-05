@@ -32,7 +32,7 @@ pub struct Task {
     pub last_done: DateTime<Local>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum TaskType {
     Eat,
     Drink,

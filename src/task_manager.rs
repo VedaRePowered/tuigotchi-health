@@ -29,15 +29,17 @@ pub struct TaskManager {
     tasks: Vec<Task>,
 }
 
+#[derive(Debug)]
 pub struct TaskDue {
-    ty: TaskType,
-    when: DateTime<Local>,
+    pub ty: TaskType,
+    pub when: DateTime<Local>,
 }
 
+#[derive(Debug, Default)]
 pub struct Tasks {
-    past: Vec<TaskDue>,
-    current: Vec<TaskDue>,
-    upcoming: Vec<TaskDue>,
+    pub past: Vec<TaskDue>,
+    pub current: Vec<TaskDue>,
+    pub upcoming: Vec<TaskDue>,
 }
 
 impl TaskManager {

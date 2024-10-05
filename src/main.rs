@@ -23,6 +23,7 @@ use color_eyre::Result;
 use config::Config;
 use interface::InterfaceState;
 use simplelog::WriteLogger;
+use task_manager::TaskManager;
 
 mod config;
 mod interface;
@@ -38,9 +39,11 @@ fn main() -> Result<()> {
         File::create("log.txt").unwrap(),
     )?;
 
-    let config = Config::load_config();
+    let mut config = Config::load_config();
+    let task_manager = TaskManager::new(&mut config);
     let mut interface = InterfaceState::new(&config)?;
-    while interface.update()? {
+    while interface.update(&task_manager)? {
+        interface.render()?;
         // Do other updates and stuff
     }
     Ok(())
