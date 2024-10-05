@@ -69,7 +69,11 @@ impl InterfaceState {
 
 impl Drop for InterfaceState {
     fn drop(&mut self) {
-        let _ = execute!(std::io::stdout(), Clear(ClearType::All), LeaveAlternateScreen);
+        let _ = execute!(
+            std::io::stdout(),
+            Clear(ClearType::All),
+            LeaveAlternateScreen
+        );
         let _ = terminal::disable_raw_mode();
     }
 }

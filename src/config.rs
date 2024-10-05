@@ -16,7 +16,7 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
  */
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::task::Task;
 
@@ -48,7 +48,7 @@ impl Config {
     pub fn load_config() -> Self {
         Self {
             character: CharacterChoice::DebugGuy,
-            tasks: vec![]
+            tasks: vec![],
         }
     }
 }

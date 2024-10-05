@@ -16,19 +16,19 @@ You should have received a copy of the GNU General Public License
 // <https://www.gnu.org/licenses/>.
  */
 
-use chrono::{NaiveTime,Duration,DateTime,Local};
+use chrono::{DateTime, Duration, Local, NaiveTime};
+use color_eyre::eyre::OptionExt;
+use color_eyre::Result;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::ops::Bound;
-use color_eyre::Result;
-use color_eyre::eyre::OptionExt;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Task {
     ty: TaskType,
     schedule: Schedule,
     #[serde(default = "Local::now", skip)]
-    pub last_done: DateTime<Local>
+    pub last_done: DateTime<Local>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,7 +47,11 @@ pub use TaskType::*;
 
 impl Task {
     pub fn new(ty: TaskType, schedule: Schedule) -> Self {
-        Self { ty, schedule, last_done: Local::now() }
+        Self {
+            ty,
+            schedule,
+            last_done: Local::now(),
+        }
     }
 
     pub fn ty(&self) -> TaskType {
@@ -62,9 +66,9 @@ impl Task {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Schedule {
     Times(BTreeSet<NaiveTime>),
-    Interval(#[serde(with = "humantime_serde")] std::time::Duration)
+    Interval(#[serde(with = "humantime_serde")] std::time::Duration),
 }
-use Schedule::{Times,Interval};
+use Schedule::{Interval, Times};
 
 impl Schedule {
     pub fn next_instance(&self, now: DateTime<Local>) -> Result<DateTime<Local>> {
@@ -75,14 +79,12 @@ impl Schedule {
                     // If there's no next event, then it's
                     // tomorrow's first
                     None => Ok((now + chrono::Days::new(1))
-                       .with_time(*times.first().ok_or_eyre("No times in schedule!")?)
-                       .earliest()
-                       .ok_or_eyre("Time is mean :(")?)
+                        .with_time(*times.first().ok_or_eyre("No times in schedule!")?)
+                        .earliest()
+                        .ok_or_eyre("Time is mean :(")?),
                 }
-            },
-            &Interval(interval) => {
-                Ok(now + interval)
             }
+            &Interval(interval) => Ok(now + interval),
         }
     }
 }

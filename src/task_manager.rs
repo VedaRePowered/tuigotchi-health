@@ -16,17 +16,17 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
-use chrono::{DateTime, Local, Duration};
+use chrono::{DateTime, Duration, Local};
 
-use crate::task::{Task, TaskType};
 use crate::config::Config;
+use crate::task::{Task, TaskType};
 
 use color_eyre::Result;
 
 const TASK_THRESHOLD: Duration = Duration::minutes(30);
 
 pub struct TaskManager {
-    tasks: Vec<Task>
+    tasks: Vec<Task>,
 }
 
 pub struct TaskDue {
@@ -42,13 +42,15 @@ pub struct Tasks {
 
 impl TaskManager {
     pub fn new(config: &mut Config) -> Self {
-        Self { tasks: std::mem::replace(&mut config.tasks, vec![]) }
+        Self {
+            tasks: std::mem::replace(&mut config.tasks, vec![]),
+        }
     }
     pub fn get_tasks(&self, now: DateTime<Local>) -> Result<Tasks> {
         let mut tasks = Tasks {
             past: vec![],
             current: vec![],
-            upcoming: vec![]
+            upcoming: vec![],
         };
 
         let now = Local::now();
@@ -60,7 +62,7 @@ impl TaskManager {
                 // relation to when it was last done, rather than now;
                 // this gives the time when the task *should* be done,
                 // or should have been done
-                when: task.schedule().next_instance(task.last_done)?
+                when: task.schedule().next_instance(task.last_done)?,
             };
 
             if task_due.when > now {
