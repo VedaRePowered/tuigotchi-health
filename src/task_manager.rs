@@ -16,6 +16,25 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
+use chrono::{DateTime, Local};
+
+use crate::task::TaskType;
+
 pub struct TaskManager {}
 
-impl TaskManager {}
+pub struct TaskDue {
+    ty: TaskType,
+    due: DateTime<Local>,
+}
+
+pub struct Tasks {
+    past: Vec<TaskDue>,
+    current: Vec<TaskDue>,
+    upcoming: Vec<TaskDue>,
+}
+
+impl TaskManager {
+    fn get_tasks(&self) -> Tasks {
+        unimplemented!()
+    }
+}
