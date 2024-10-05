@@ -16,8 +16,33 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
-pub struct Config {}
+#[derive(Debug)]
+pub struct Config {
+    pub character: CharacterChoice,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CharacterChoice {
+    DebugGuy,
+}
+
+impl CharacterChoice {
+    pub fn get_character_name(&self) -> &'static str {
+        match self {
+            CharacterChoice::DebugGuy => "Debug Guy (very cool)",
+        }
+    }
+    pub fn get_animation_file(&self) -> &'static str {
+        match self {
+            CharacterChoice::DebugGuy => include_str!("animations/debug_guy.txt"),
+        }
+    }
+}
 
 impl Config {
-    pub fn load_config() {}
+    pub fn load_config() -> Self {
+        Self {
+            character: CharacterChoice::DebugGuy,
+        }
+    }
 }

@@ -27,6 +27,7 @@ pub struct Task {
     schedule: Schedule
 }
 
+#[derive(Debug)]
 pub enum TaskType {
     Eat,
     Drink,

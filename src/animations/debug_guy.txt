@@ -1,0 +1,51 @@
+animation idle
+frame 2000ms
+/. .\
+\ v /
+ /+\
+/ | \
+  |
+ / \
+/   \
+frame 200ms
+/- -\
+\ v /
+ /+\
+/ | \
+  |
+ / \
+/   \
+animation walk
+frame 500ms
+/.  \
+\-  /
+ /+\
+/ | \
+  |
+ / \
+/   \
+frame 500ms
+/.  \
+\-  /
+ /+\
+ |||
+  |
+ / \
+ | | 
+animation task/general
+frame 1000ms
+/. .\
+\ v /
+ /+\
+ \X |
+  |
+ / \
+/   \
+frame 1000ms
+/. .\
+\ v /
+ /+\
+| X/
+  |
+ / \
+/   \

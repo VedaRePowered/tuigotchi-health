@@ -16,8 +16,60 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
+use std::time::Duration;
+
+use color_eyre::Result;
+use crossterm::{
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    execute,
+    terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use log::info;
+use visual::LilGuyState;
+
+use crate::config::Config;
+
 mod visual;
 
-pub struct InterfaceState {}
+#[derive(Debug)]
+pub struct InterfaceState {
+    lil_guy: LilGuyState,
+}
 
-impl InterfaceState {}
+impl InterfaceState {
+    pub fn new(conf: &Config) -> Result<Self> {
+        let mut stdout = std::io::stdout();
+        execute!(stdout, EnterAlternateScreen, Clear(ClearType::All))?;
+        terminal::enable_raw_mode()?;
+        Ok(InterfaceState {
+            lil_guy: LilGuyState::new(conf.character)?,
+        })
+    }
+    /// Update the state of the interface, will run every ~100ms
+    /// returns false if the program should exit.
+    pub fn update(&mut self) -> Result<bool> {
+        if event::poll(Duration::from_millis(100))? {
+            info!("Hi!");
+            let ev = event::read()?;
+            match ev {
+                Event::Key(KeyEvent {
+                    code: KeyCode::Char('q'),
+                    modifiers: KeyModifiers::NONE,
+                    ..
+                }) => {
+                    // Quit
+                    return Ok(false);
+                }
+                _ => info!("Unused event: {ev:?}"),
+            }
+        }
+        Ok(true)
+    }
+}
+
+impl Drop for InterfaceState {
+    fn drop(&mut self) {
+        let _ = execute!(std::io::stdout(), Clear(ClearType::All), LeaveAlternateScreen);
+        let _ = terminal::disable_raw_mode();
+    }
+}

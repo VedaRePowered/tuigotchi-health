@@ -20,6 +20,8 @@ along with Tamagotchi Health. If not, see
 use std::fs::File;
 
 use color_eyre::Result;
+use config::Config;
+use interface::InterfaceState;
 use simplelog::WriteLogger;
 
 mod config;
@@ -36,6 +38,10 @@ fn main() -> Result<()> {
         File::create("log.txt").unwrap(),
     )?;
 
-    println!("\x1b[35muwu!\x1b[0m");
+    let config = Config::load_config();
+    let mut interface = InterfaceState::new(&config)?;
+    while interface.update()? {
+        // Do other updates and stuff
+    }
     Ok(())
 }
