@@ -24,7 +24,8 @@ use color_eyre::eyre::OptionExt;
 
 pub struct Task {
     ty: TaskType,
-    schedule: Schedule
+    schedule: Schedule,
+    last_done: DateTime
 }
 
 #[derive(Debug)]
@@ -40,7 +41,13 @@ pub enum TaskType {
     Other(String),
 }
 
-impl Task {}
+struct TaskTypeConfig();
+
+impl Task {
+    fn new(ty: TaskType, schedule: Schedule) -> Option<Self> {
+        Self { ty, schedule }
+    }
+}
 
 enum Schedule {
     Times(BTreeSet<NaiveTime>),
