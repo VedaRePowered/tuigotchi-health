@@ -30,8 +30,8 @@ use visual::LilGuyState;
 
 use crate::{
     config::Config,
-    task::Task,
-    task_manager::{TaskManager, Tasks},
+    task::{Task, TaskType},
+    task_manager::{TaskManager, Tasks, TASK_THRESHOLD},
 };
 
 mod visual;
@@ -77,8 +77,9 @@ impl InterfaceState {
         let notify_tasks = new_tasks
             .current
             .iter()
-            .filter(|task| !self.tasks.current.contains(&task));
-        //self.notify_tasks(notify_tasks);
+            .filter(|task| !self.tasks.current.contains(&task))
+            .map(|task| task.ty.clone());
+        self.notify_tasks(notify_tasks)?;
         self.tasks = new_tasks;
         let happiness = 1.0
             - self
@@ -87,24 +88,24 @@ impl InterfaceState {
                 .iter()
                 .map(|task| {
                     // This formula is not special its just a random thing I came up with
-                    ((now - task.when).num_seconds() as f32 / 60.0 / 60.0).sqrt()
+                    ((now - task.when - TASK_THRESHOLD).num_seconds() as f32 / 60.0).sqrt()
                 })
                 .sum::<f32>()
                 .clamp(0.0, 1.0);
         self.lil_guy.update(happiness, None, (0i32..20, 0i32..10));
         Ok(true)
     }
-    pub fn render(&self) -> Result<()> {
-        queue!(std::io::stdout(), Clear(ClearType::All))?;
-        self.lil_guy.render((10, 10))?;
-        std::io::stdout().flush()?;
+    pub fn render(&self, writer: &mut impl Write) -> Result<()> {
+        queue!(writer, Clear(ClearType::All))?;
+        self.lil_guy.render(writer, (10, 10))?;
+        writer.flush()?;
         Ok(())
     }
 
-    fn notify_tasks(&self, tasks: impl Iterator<Item = Task>) -> Result<()> {
+    fn notify_tasks<'a>(&self, tasks: impl Iterator<Item = TaskType>) -> Result<()> {
         for task in tasks {
             notify_rust::Notification::new()
-                .summary(&*format!("{}", task.ty()))
+                .summary(&*format!("{}", task))
                 .appname(NOTIFY_APPNAME)
                 .show()?;
         }

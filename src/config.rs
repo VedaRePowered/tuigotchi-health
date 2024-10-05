@@ -16,6 +16,9 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
  */
 
+use std::{fs::File, path::Path, time::Duration};
+
+use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::task::Task;
@@ -23,11 +26,21 @@ use crate::task::Task;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub character: CharacterChoice,
+    #[serde(with = "humantime_serde")] 
+    pub task_timeout: Duration,
+    #[serde(with = "humantime_serde")] 
+    pub task_timeout_max: Duration,
+    #[serde(with = "humantime_serde")] 
+    pub idle_animation_time_min: Duration,
+    #[serde(with = "humantime_serde")] 
+    pub idle_animation_time_max: Duration,
+    colour: [u8; 3],
     pub tasks: Vec<Task>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CharacterChoice {
+    #[serde(rename = "Debug Guy")]
     DebugGuy,
     Kitty,
 }
@@ -48,10 +61,22 @@ impl CharacterChoice {
 }
 
 impl Config {
-    pub fn load_config() -> Self {
-        Self {
-            character: CharacterChoice::Kitty,
-            tasks: vec![],
-        }
+    pub fn load_config(config_path: impl AsRef<Path>) -> Result<Self> {
+        let mut path = config_path.as_ref().to_path_buf();
+        std::fs::create_dir_all(&path)?;
+        path.push("config.yaml");
+        Ok(if path.exists() {
+            serde_yaml::from_str(&std::fs::read_to_string(&path)?)?
+        } else {
+            let config = Self::default();
+            serde_yaml::to_writer(File::create(&path)?, &config)?;
+            config
+        })
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        serde_yaml::from_str(include_str!("default_config.yaml")).unwrap()
     }
 }

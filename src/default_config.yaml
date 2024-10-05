@@ -1,0 +1,29 @@
+character: Kitty
+task_timeout: 30min
+task_timeout_max: 60min
+idle_animation_time_min: 5sec
+idle_animation_time_max: 30sec
+colour: [0, 255, 0]
+tasks:
+  - type: Eat
+    schedule: !Times
+      - 9:00:00
+      - 12:30:00
+      - 18:00:00
+  - type: Drink
+    schedule: !Interval 30min
+  - type: Brush Teeth
+    schedule: !Times
+      - 22:00:00
+  - type: Shower
+    schedule: !Times
+      - 23:00:00
+  - type: Eyes Rest
+    schedule: !Interval 20min
+  - type: Sleep
+    schedule: !Times
+      - 00:00:00
+  - type: Bathroom
+    schedule: !Interval 60min
+  - type: !Other Pet Cat
+    schedule: !Interval 1s

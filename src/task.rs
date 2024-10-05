@@ -27,6 +27,7 @@ use std::ops::Bound;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Task {
+    #[serde(rename = "type")]
     ty: TaskType,
     schedule: Schedule,
     #[serde(default = "Local::now", skip)]
@@ -37,9 +38,12 @@ pub struct Task {
 pub enum TaskType {
     Eat,
     Drink,
+    #[serde(rename = "Brush Teeth")]
     BrushTeeth,
     Shower,
+    #[serde(rename = "Eyes Rest")]
     EyesRest,
+    #[serde(rename = "Take Meds")]
     TakeMeds,
     Sleep,
     Bathroom,

@@ -23,7 +23,7 @@ use crate::task::{Task, TaskType};
 
 use color_eyre::Result;
 
-const TASK_THRESHOLD: Duration = Duration::minutes(30);
+pub const TASK_THRESHOLD: Duration = Duration::minutes(30);
 
 pub struct TaskManager {
     tasks: Vec<Task>,

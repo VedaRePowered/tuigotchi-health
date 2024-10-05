@@ -17,10 +17,7 @@ along with Tamagotchi Health. If not, see
 */
 
 use std::{
-    collections::HashMap,
-    ops::Range,
-    str::FromStr,
-    time::{Duration, Instant},
+    collections::HashMap, io::Write, ops::Range, str::FromStr, time::{Duration, Instant}
 };
 
 use color_eyre::{eyre::bail, Result};
@@ -194,12 +191,12 @@ impl LilGuyState {
             }
         }
     }
-    pub fn render(&self, center: (i32, i32)) -> Result<()> {
+    pub fn render(&self, writer: &mut impl Write, center: (i32, i32)) -> Result<()> {
         let pos = (center.0 + self.pos.0, center.1 + self.pos.1);
         let frame = &self.animations[&self.current_animation][self.animation_frame];
         for (y, line) in frame.lines.iter().enumerate() {
             queue!(
-                std::io::stdout(),
+                writer,
                 MoveTo(
                     pos.0.clamp(0, 65535) as u16,
                     (pos.1 + (y as i32)).clamp(0, 65535) as u16

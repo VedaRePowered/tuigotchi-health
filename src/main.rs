@@ -17,9 +17,9 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
-use std::fs::File;
+use std::{fs::File, io::BufWriter};
 
-use color_eyre::Result;
+use color_eyre::{eyre::OptionExt, Result};
 use config::Config;
 use interface::InterfaceState;
 use simplelog::WriteLogger;
@@ -39,11 +39,15 @@ fn main() -> Result<()> {
         File::create("log.txt").unwrap(),
     )?;
 
-    let mut config = Config::load_config();
+    let dirs =
+        directories::ProjectDirs::from("ca.vedapowered", "Trans Girlies", "Tamagotchi Health")
+            .ok_or_eyre("Failed to load config dir!")?;
+    let mut config = Config::load_config(dirs.config_dir())?;
     let task_manager = TaskManager::new(&mut config);
     let mut interface = InterfaceState::new(&config)?;
+    let mut stdout = BufWriter::new(std::io::stdout());
     while interface.update(&task_manager)? {
-        interface.render()?;
+        interface.render(&mut stdout)?;
         // Do other updates and stuff
     }
     Ok(())
