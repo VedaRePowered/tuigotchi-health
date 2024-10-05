@@ -22,6 +22,7 @@ use color_eyre::eyre::OptionExt;
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
+use std::fmt;
 use std::ops::Bound;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,7 +45,29 @@ pub enum TaskType {
     Bathroom,
     Other(String),
 }
-pub use TaskType::*;
+
+impl fmt::Display for TaskType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use TaskType::*;
+
+        let disp = match self {
+            TaskType::Eat => "I'm hungry!",
+            TaskType::Drink => "I'm thirsty!",
+            TaskType::BrushTeeth => "My breath smells!",
+            TaskType::Shower => "I'm stinky!",
+            TaskType::EyesRest => "My eyes are tired!",
+            TaskType::TakeMeds => "I don't feel good >.<",
+            TaskType::Sleep => "I'm eepy!",
+            TaskType::Bathroom => "I have to go!",
+            TaskType::Other(d) => {
+                write!(f, "I need to {}", d)?;
+                return Ok(());
+            }
+        };
+
+        write!(f, "{}", disp)
+    }
+}
 
 impl Task {
     pub fn new(ty: TaskType, schedule: Schedule) -> Self {

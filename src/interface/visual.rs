@@ -163,10 +163,15 @@ impl LilGuyState {
             self.current_animation = LilGuyAnimation::Sad(sad_level);
         } else if self.idle_animation_change < Instant::now() {
             let mut rng = thread_rng();
-            self.idle_animation_change = Instant::now() + Duration::from_secs_f32(rng.gen_range(1.0..5.0));
+            self.idle_animation_change =
+                Instant::now() + Duration::from_secs_f32(rng.gen_range(1.0..5.0));
             // FIXME: I don't like this but eh I'll fix it later...
             if rng.gen_ratio(1, 3) {
-                self.current_animation = if rng.gen_bool(0.5) { LilGuyAnimation::WalkLeft } else { LilGuyAnimation::WalkRight };
+                self.current_animation = if rng.gen_bool(0.5) {
+                    LilGuyAnimation::WalkLeft
+                } else {
+                    LilGuyAnimation::WalkRight
+                };
             } else if rng.gen_ratio(1, 2) {
                 self.current_animation = LilGuyAnimation::Idle;
             }

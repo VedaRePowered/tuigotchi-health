@@ -48,6 +48,7 @@ impl TaskManager {
             tasks: std::mem::replace(&mut config.tasks, vec![]),
         }
     }
+
     pub fn get_tasks(&self, now: DateTime<Local>) -> Result<Tasks> {
         let mut tasks = Tasks {
             past: vec![],

@@ -21,17 +21,22 @@ use std::{io::Write, time::Duration};
 use chrono::Local;
 use color_eyre::Result;
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers}, execute, queue, terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen}
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
+    execute, queue,
+    terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use log::info;
 use visual::LilGuyState;
 
 use crate::{
     config::Config,
+    task::Task,
     task_manager::{TaskManager, Tasks},
 };
 
 mod visual;
+
+const NOTIFY_APPNAME: &'static str = "tamagotchi-health";
 
 #[derive(Debug)]
 pub struct InterfaceState {
@@ -69,7 +74,10 @@ impl InterfaceState {
         }
         let now = Local::now();
         let new_tasks = task_manager.get_tasks(now)?;
-        let notify_tasks = new_tasks.current.iter().filter(|task| !self.tasks.current.contains(&task));
+        let notify_tasks = new_tasks
+            .current
+            .iter()
+            .filter(|task| !self.tasks.current.contains(&task));
         //self.notify_tasks(notify_tasks);
         self.tasks = new_tasks;
         let happiness = 1.0
@@ -90,6 +98,17 @@ impl InterfaceState {
         queue!(std::io::stdout(), Clear(ClearType::All))?;
         self.lil_guy.render((10, 10))?;
         std::io::stdout().flush()?;
+        Ok(())
+    }
+
+    fn notify_tasks(&self, tasks: impl Iterator<Item = Task>) -> Result<()> {
+        for task in tasks {
+            notify_rust::Notification::new()
+                .summary(&*format!("{}", task.ty()))
+                .appname(NOTIFY_APPNAME)
+                .show()?;
+        }
+
         Ok(())
     }
 }
