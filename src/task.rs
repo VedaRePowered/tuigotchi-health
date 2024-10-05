@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 // <https://www.gnu.org/licenses/>.
  */
 
+use chrono::DurationRound;
 use chrono::{DateTime, Duration, Local, NaiveTime};
 use color_eyre::eyre::OptionExt;
 use color_eyre::Result;
@@ -79,13 +80,19 @@ impl Schedule {
         match self {
             Times(times) => {
                 match times.lower_bound(Bound::Excluded(&now.time())).peek_next() {
-                    Some(&t) => Ok(now.with_time(t).earliest().ok_or_eyre("Time is mean :(")?),
+                    // i don't wanna handle times that don't exist due
+                    // to time change right now, just say those tasks
+                    // happen at midnight for now
+                    Some(&t) => Ok(now
+                        .with_time(t)
+                        .earliest()
+                        .unwrap_or_else(|| now.duration_round(Duration::days(1)).unwrap())),
                     // If there's no next event, then it's
                     // tomorrow's first
                     None => Ok((now + chrono::Days::new(1))
                         .with_time(*times.first().ok_or_eyre("No times in schedule!")?)
                         .earliest()
-                        .ok_or_eyre("Time is mean :(")?),
+                        .unwrap_or_else(|| now.duration_round(Duration::days(1)).unwrap())),
                 }
             }
             &Interval(interval) => Ok(now + interval),
