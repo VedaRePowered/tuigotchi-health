@@ -12,11 +12,15 @@ You should have received a copy of the GNU General Public License along with Tam
 <https://www.gnu.org/licenses/>.
 */
 
-mod config;
-mod interface;
-mod task;
-mod task_manager;
-
-fn main() {
-    println!("\x1b[35muwu!\x1b[0m");
+pub struct Task {
+    ty: TaskType,
 }
+
+pub enum TaskType {
+    Eat,
+    Drink,
+    BrushTeeth,
+    Other(String),
+}
+
+impl Task {}

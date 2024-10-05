@@ -12,11 +12,8 @@ You should have received a copy of the GNU General Public License along with Tam
 <https://www.gnu.org/licenses/>.
 */
 
-mod config;
-mod interface;
-mod task;
-mod task_manager;
+pub struct Config {}
 
-fn main() {
-    println!("\x1b[35muwu!\x1b[0m");
+impl Config {
+    pub fn load_config() {}
 }
