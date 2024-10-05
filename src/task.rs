@@ -24,6 +24,11 @@ pub enum TaskType {
     Eat,
     Drink,
     BrushTeeth,
+    Shower,
+    EyesRest,
+    TakeMeds,
+    Sleep,
+    Bathroom,
     Other(String),
 }
 
