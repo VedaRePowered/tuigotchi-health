@@ -1,0 +1,14 @@
+
+* Self-care Tamagotchi
+
+** Tasks
++ Eating
++ Drinking
++ Reminder to go bathroom
++ Stretching/resting eyes (20/20/20 rule)
++ Teef bush and shower and shave
++ Take meds
+
+** Implementation
++ ASCII art terminal app
++ Keyboard shortcuts for tasks
