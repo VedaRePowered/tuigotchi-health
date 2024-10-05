@@ -1,3 +1,4 @@
+#![feature(btree_cursors)]
 /*
 This file is part of Tamagotchi Health.
 
