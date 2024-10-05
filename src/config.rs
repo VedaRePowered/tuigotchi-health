@@ -29,17 +29,20 @@ pub struct Config {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CharacterChoice {
     DebugGuy,
+    Kitty,
 }
 
 impl CharacterChoice {
     pub fn get_character_name(&self) -> &'static str {
         match self {
             CharacterChoice::DebugGuy => "Debug Guy (very cool)",
+            CharacterChoice::Kitty => "Kitted Catte",
         }
     }
     pub fn get_animation_file(&self) -> &'static str {
         match self {
             CharacterChoice::DebugGuy => include_str!("animations/debug_guy.txt"),
+            CharacterChoice::Kitty => include_str!("animations/kitty.txt"),
         }
     }
 }
@@ -47,7 +50,7 @@ impl CharacterChoice {
 impl Config {
     pub fn load_config() -> Self {
         Self {
-            character: CharacterChoice::DebugGuy,
+            character: CharacterChoice::Kitty,
             tasks: vec![],
         }
     }
