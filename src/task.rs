@@ -61,6 +61,10 @@ impl Task {
     pub fn schedule(&self) -> Schedule {
         self.schedule.clone()
     }
+
+    pub fn complete(&mut self, now: DateTime<Local>) {
+        self.last_done = now;
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
