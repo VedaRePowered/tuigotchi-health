@@ -30,7 +30,7 @@ use visual::LilGuyState;
 
 use crate::{
     config::Config,
-    task::{Task, TaskType},
+    task::TaskType,
     task_manager::{TaskManager, Tasks, TASK_THRESHOLD},
 };
 
@@ -92,7 +92,7 @@ impl InterfaceState {
                 })
                 .sum::<f32>()
                 .clamp(0.0, 1.0);
-        self.lil_guy.update(happiness, None, (0i32..20, 0i32..10));
+        self.lil_guy.update(happiness, None, (0i32..80, 0i32..35))?;
         Ok(true)
     }
     pub fn render(&self, writer: &mut impl Write) -> Result<()> {

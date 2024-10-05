@@ -22,6 +22,7 @@ use std::{fs::File, io::BufWriter};
 use color_eyre::{eyre::OptionExt, Result};
 use config::Config;
 use interface::InterfaceState;
+use log::{error, warn};
 use simplelog::WriteLogger;
 use task_manager::TaskManager;
 
@@ -30,7 +31,7 @@ mod interface;
 mod task;
 mod task_manager;
 
-fn main() -> Result<()> {
+fn not_main() -> Result<()> {
     color_eyre::install()?;
 
     WriteLogger::init(
@@ -47,8 +48,16 @@ fn main() -> Result<()> {
     let mut interface = InterfaceState::new(&config)?;
     let mut stdout = BufWriter::new(std::io::stdout());
     while interface.update(&task_manager)? {
-        interface.render(&mut stdout)?;
+        if let Err(e) = interface.render(&mut stdout) {
+            warn!("Rendering error: {e}");
+        }
         // Do other updates and stuff
     }
     Ok(())
+}
+
+fn main() {
+    if let Err(e) = not_main() {
+        error!("AAAAAAAAAAAAAAAAAAAAA We crashed: {e}");
+    }
 }

@@ -17,10 +17,17 @@ along with Tamagotchi Health. If not, see
 */
 
 use std::{
-    collections::HashMap, io::Write, ops::Range, str::FromStr, time::{Duration, Instant}
+    collections::HashMap,
+    io::Write,
+    ops::Range,
+    str::FromStr,
+    time::{Duration, Instant},
 };
 
-use color_eyre::{eyre::bail, Result};
+use color_eyre::{
+    eyre::{bail, OptionExt},
+    Result,
+};
 use crossterm::{cursor::MoveTo, queue, style::Print};
 use rand::{thread_rng, Rng};
 
@@ -28,7 +35,7 @@ use crate::{config::CharacterChoice, task::TaskType};
 
 #[derive(Debug)]
 pub struct LilGuyState {
-    animations: HashMap<LilGuyAnimation, Vec<AnimationFrame>>,
+    animations: Animations,
     current_animation: LilGuyAnimation,
     animation_frame: usize,
     next_frame_time: Instant,
@@ -36,31 +43,77 @@ pub struct LilGuyState {
     pos: (i32, i32),
 }
 
-fn load_animations(text: &str) -> Result<HashMap<LilGuyAnimation, Vec<AnimationFrame>>> {
-    text.lines()
-        .collect::<Vec<_>>()
-        .chunk_by(|_a, b| !b.starts_with("animation "))
-        .map(|animation_lines| {
-            let animation_name: LilGuyAnimation = animation_lines[0]
-                .trim_start_matches("animation ")
-                .parse()?;
-            let animation_frames: Vec<_> = animation_lines[1..]
-                .chunk_by(|_a, b| !b.starts_with("frame "))
-                .map(|frame_lines| {
-                    let frame_time = frame_lines[0]
-                        .trim_start_matches("frame ")
-                        .trim_end_matches("ms");
-                    let frame_time: f64 = frame_time.parse()?;
-                    let frame_time = Duration::from_secs_f64(frame_time / 1000.0);
-                    Ok(AnimationFrame {
-                        duration: frame_time,
-                        lines: frame_lines[1..].iter().map(|s| s.to_string()).collect(),
+#[derive(Debug)]
+struct Animations {
+    anims: HashMap<LilGuyAnimation, Vec<AnimationFrame>>,
+    max_sadness: u32,
+    max_bounds: (u32, u32),
+}
+
+impl Animations {
+    fn load(text: &str) -> Result<Animations> {
+        let anims: HashMap<_, _> = text
+            .lines()
+            .collect::<Vec<_>>()
+            .chunk_by(|_a, b| !b.starts_with("animation "))
+            .map(|animation_lines| {
+                let animation_name: LilGuyAnimation = animation_lines[0]
+                    .trim_start_matches("animation ")
+                    .parse()?;
+                let animation_frames: Vec<_> = animation_lines[1..]
+                    .chunk_by(|_a, b| !b.starts_with("frame "))
+                    .map(|frame_lines| {
+                        let frame_time = frame_lines[0]
+                            .trim_start_matches("frame ")
+                            .trim_end_matches("ms");
+                        let frame_time: f64 = frame_time.parse()?;
+                        let frame_time = Duration::from_secs_f64(frame_time / 1000.0);
+                        Ok(AnimationFrame {
+                            duration: frame_time,
+                            lines: frame_lines[1..].iter().map(|s| s.to_string()).collect(),
+                        })
                     })
+                    .collect::<Result<_>>()?;
+                Ok((animation_name, animation_frames))
+            })
+            .collect::<Result<_>>()?;
+        Ok(Animations {
+            max_sadness: anims
+                .keys()
+                .filter_map(|anim| {
+                    if let LilGuyAnimation::Sad(level) = anim {
+                        Some(*level)
+                    } else {
+                        None
+                    }
                 })
-                .collect::<Result<_>>()?;
-            Ok((animation_name, animation_frames))
+                .max()
+                .unwrap_or(0),
+            max_bounds: (
+                anims
+                    .values()
+                    .flatten()
+                    .map(|frame| frame.lines.len() as u32)
+                    .max()
+                    .unwrap_or(1),
+                anims
+                    .values()
+                    .flatten()
+                    .flat_map(|frame| frame.lines.iter())
+                    .map(|line| line.len() as u32)
+                    .max()
+                    .unwrap_or(1),
+            ),
+            anims,
         })
-        .collect::<Result<_>>()
+    }
+    fn get(&self, anim: &LilGuyAnimation) -> Result<&[AnimationFrame]> {
+        self.anims
+            .get(anim)
+            .map(|frames| frames.as_slice())
+            .ok_or_eyre("No animation!")
+            .or_else(|_| self.get(&anim.get_fallback()?))
+    }
 }
 
 #[derive(Debug, Default)]
@@ -82,8 +135,8 @@ pub enum LilGuyAnimation {
 }
 
 impl LilGuyAnimation {
-    fn get_fallback(&self) -> LilGuyAnimation {
-        match self {
+    fn get_fallback(&self) -> Result<LilGuyAnimation> {
+        Ok(match self {
             LilGuyAnimation::WalkLeft => LilGuyAnimation::Walk,
             LilGuyAnimation::WalkRight => LilGuyAnimation::Walk,
             LilGuyAnimation::Sad(n) if *n > 0 => LilGuyAnimation::Sad(*n - 1),
@@ -93,8 +146,9 @@ impl LilGuyAnimation {
             LilGuyAnimation::Task(t) if *t != TaskType::Other("".to_string()) => {
                 LilGuyAnimation::Task(TaskType::Other("".to_string()))
             }
+            LilGuyAnimation::Idle => bail!("No fallback animation for idle!"),
             _ => LilGuyAnimation::Idle,
-        }
+        })
     }
 }
 
@@ -134,7 +188,7 @@ impl FromStr for LilGuyAnimation {
 impl LilGuyState {
     pub fn new(character: CharacterChoice) -> Result<Self> {
         Ok(LilGuyState {
-            animations: load_animations(character.get_animation_file())?,
+            animations: Animations::load(character.get_animation_file())?,
             current_animation: LilGuyAnimation::Idle,
             animation_frame: 0,
             next_frame_time: Instant::now(),
@@ -147,16 +201,18 @@ impl LilGuyState {
         happiness: f32,
         ongoing_task: Option<TaskType>,
         room_bounds: (Range<i32>, Range<i32>),
-    ) {
+    ) -> Result<()> {
         let now = Instant::now();
         if self.pos.0 < room_bounds.0.start {
             self.current_animation = LilGuyAnimation::WalkRight;
-        } else if self.pos.0 > room_bounds.0.end {
+        } else if self.pos.0 + self.animations.max_bounds.1 as i32 > room_bounds.0.end {
             self.current_animation = LilGuyAnimation::WalkLeft;
         } else if let Some(task) = ongoing_task {
             self.current_animation = LilGuyAnimation::Task(task);
         } else if happiness < 0.6 {
-            let sad_level = (((1.0 - happiness / 0.6) * 2.0).floor() as u32).clamp(0, 1);
+            let sad_level = (((1.0 - happiness / 0.6) * (self.animations.max_sadness as f32 + 1.0))
+                .floor() as u32)
+                .clamp(0, 1);
             self.current_animation = LilGuyAnimation::Sad(sad_level);
         } else if self.idle_animation_change < Instant::now() {
             let mut rng = thread_rng();
@@ -173,11 +229,7 @@ impl LilGuyState {
                 self.current_animation = LilGuyAnimation::Idle;
             }
         }
-        let anim = &self
-            .animations
-            .get(&self.current_animation)
-            .or_else(|| self.animations.get(&self.current_animation.get_fallback()))
-            .expect("No Suitable Animation Found!");
+        let anim = &self.animations.get(&self.current_animation)?;
         if now > self.next_frame_time {
             self.animation_frame += 1;
             if self.animation_frame >= anim.len() {
@@ -190,16 +242,18 @@ impl LilGuyState {
                 _ => {}
             }
         }
+        Ok(())
     }
     pub fn render(&self, writer: &mut impl Write, center: (i32, i32)) -> Result<()> {
         let pos = (center.0 + self.pos.0, center.1 + self.pos.1);
-        let frame = &self.animations[&self.current_animation][self.animation_frame];
+        let frame = &self.animations.get(&self.current_animation)?[self.animation_frame];
+        let y_offset = self.animations.max_bounds.1 as i32 - frame.lines.len() as i32;
         for (y, line) in frame.lines.iter().enumerate() {
             queue!(
                 writer,
                 MoveTo(
                     pos.0.clamp(0, 65535) as u16,
-                    (pos.1 + (y as i32)).clamp(0, 65535) as u16
+                    (pos.1 + y_offset + y as i32).clamp(0, 65535) as u16
                 ),
                 Print(line),
             )?;

@@ -25,5 +25,3 @@ tasks:
       - 00:00:00
   - type: Bathroom
     schedule: !Interval 60min
-  - type: !Other Pet Cat
-    schedule: !Interval 1s
