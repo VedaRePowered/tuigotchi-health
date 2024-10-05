@@ -29,7 +29,7 @@ pub struct TaskManager {
     tasks: Vec<Task>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct TaskDue {
     pub ty: TaskType,
     pub when: DateTime<Local>,

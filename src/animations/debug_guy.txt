@@ -15,6 +15,23 @@ frame 200ms
   |
  / \
 /   \
+animation want/eat
+frame 5000ms
+/. .\  /---------\
+\ o / <  Feed me |
+ /+\   \---------/
+/ |/
+  |
+ / \
+/   \
+frame 5000ms
+/. .\
+\ - /
+ /+\
+/ | \
+  |
+ / \
+/   \
 animation sad/0
 frame 3000ms
 /. .\
@@ -107,4 +124,29 @@ frame 1000ms
 | X/
   |
  / \
+/   \
+animation task/eat
+frame 1000ms
+/. .\
+\/m /
+/-+\
+  ||
+  |
+ / \
+/   \
+frame 500ms
+/. .\
+\ m /
+-/+\ '
+' ||
+  |
+ / \
+/   \
+frame 500ms
+/. .\
+\/m /
+/-+\
+  ||
+  |  '
+./ \
 /   \

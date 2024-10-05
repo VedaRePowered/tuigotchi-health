@@ -21,9 +21,7 @@ use std::{io::Write, time::Duration};
 use chrono::Local;
 use color_eyre::Result;
 use crossterm::{
-    event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
-    execute,
-    terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+    event::{self, Event, KeyCode, KeyEvent, KeyModifiers}, execute, queue, terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen}
 };
 use log::info;
 use visual::LilGuyState;
@@ -70,7 +68,10 @@ impl InterfaceState {
             }
         }
         let now = Local::now();
-        self.tasks = task_manager.get_tasks(now)?;
+        let new_tasks = task_manager.get_tasks(now)?;
+        let notify_tasks = new_tasks.current.iter().filter(|task| !self.tasks.current.contains(&task));
+        //self.notify_tasks(notify_tasks);
+        self.tasks = new_tasks;
         let happiness = 1.0
             - self
                 .tasks
@@ -86,6 +87,7 @@ impl InterfaceState {
         Ok(true)
     }
     pub fn render(&self) -> Result<()> {
+        queue!(std::io::stdout(), Clear(ClearType::All))?;
         self.lil_guy.render((10, 10))?;
         std::io::stdout().flush()?;
         Ok(())
