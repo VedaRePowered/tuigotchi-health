@@ -12,11 +12,25 @@ You should have received a copy of the GNU General Public License along with Tam
 <https://www.gnu.org/licenses/>.
 */
 
+use std::fs::File;
+
+use color_eyre::Result;
+use simplelog::WriteLogger;
+
 mod config;
 mod interface;
 mod task;
 mod task_manager;
 
-fn main() {
+fn main() -> Result<()> {
+    color_eyre::install()?;
+
+    WriteLogger::init(
+        simplelog::LevelFilter::Info,
+        simplelog::Config::default(),
+        File::create("log.txt").unwrap(),
+    )?;
+
     println!("\x1b[35muwu!\x1b[0m");
+    Ok(())
 }
