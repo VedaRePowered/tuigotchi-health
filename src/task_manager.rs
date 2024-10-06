@@ -44,7 +44,7 @@ pub struct Tasks {
 impl TaskManager {
     pub fn new(config: &mut Config) -> Result<Self> {
         Ok(Self {
-            tasks: std::mem::replace(&mut config.tasks, vec![]),
+            tasks: std::mem::take(&mut config.tasks),
             task_threshold: Duration::from_std(config.task_timeout)?,
         })
     }

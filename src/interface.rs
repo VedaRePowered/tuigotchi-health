@@ -32,9 +32,9 @@ use crossterm::{
     style::Print,
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use lil_guy::LilGuyState;
 use log::info;
-use notify_rust::{Hint, Timeout, Urgency};
-use visual::LilGuyState;
+use notify_rust::{Hint, Urgency};
 
 use crate::{
     config::Config,
@@ -42,9 +42,9 @@ use crate::{
     task_manager::{TaskManager, Tasks},
 };
 
-mod visual;
+mod lil_guy;
 
-const NOTIFY_APPNAME: &'static str = "tamagotchi-health";
+const NOTIFY_APPNAME: &str = "tamagotchi-health";
 
 #[derive(Debug)]
 pub struct InterfaceState {
@@ -56,6 +56,8 @@ pub struct InterfaceState {
     task_animations: VecDeque<TaskType>,
     current_task_animation: Option<(TaskType, Instant)>,
     task_animation_duration: Duration,
+    mood: &'static str,
+    char_name: &'static str,
 }
 
 impl InterfaceState {
@@ -81,6 +83,8 @@ impl InterfaceState {
             task_animations: VecDeque::new(),
             current_task_animation: None,
             task_animation_duration: conf.task_animation_duration,
+            mood: "",
+            char_name: conf.character.character_name(),
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -95,7 +99,7 @@ impl InterfaceState {
                 .map(|task| {
                     let keybind = task.ty.keybind().unwrap_or_else(|| {
                         number_keybind += 1;
-                        ('0' as u8 + number_keybind as u8) as char
+                        (b'0' + number_keybind as u8) as char
                     });
                     (keybind, task.ty.clone())
                 })
@@ -138,13 +142,13 @@ impl InterfaceState {
         let notify_tasks = new_tasks
             .current
             .iter()
-            .filter(|task| !self.tasks.current.contains(&task))
+            .filter(|task| !self.tasks.current.contains(task))
             .map(|task| task.ty.clone());
         self.notify_tasks(notify_tasks, false)?;
         let priority_notify_tasks = new_tasks
             .past
             .iter()
-            .filter(|task| !self.tasks.past.contains(&task))
+            .filter(|task| !self.tasks.past.contains(task))
             .map(|task| task.ty.clone());
         self.notify_tasks(priority_notify_tasks, true)?;
         self.tasks = new_tasks;
@@ -174,6 +178,7 @@ impl InterfaceState {
                 })
                 .sum::<f32>()
                 .clamp(0.0, 1.0);
+        self.mood = if happiness > 0.6 { "Happy" } else { "Sad" };
 
         let screen_size = terminal::window_size()?;
         self.lil_guy.update(
@@ -191,6 +196,11 @@ impl InterfaceState {
         let screen_size = terminal::window_size()?;
         let text_height = 12.max(self.keybinds.len() as i32 + 2);
         queue!(writer, Clear(ClearType::All))?;
+        queue!(
+            writer,
+            MoveTo(10, 2),
+            Print(format!("{} is {}.", self.char_name, self.mood))
+        )?;
         self.lil_guy
             .render(writer, (2, screen_size.rows as i32 - text_height))?;
         for (i, (keybind, task_type)) in self.keybinds.iter().enumerate() {
@@ -210,17 +220,17 @@ impl InterfaceState {
     }
 
     /// Send a notification and play a sound for a task
-    fn notify_tasks<'a>(
-        &self,
-        tasks: impl Iterator<Item = TaskType>,
-        is_priority: bool,
-    ) -> Result<()> {
+    fn notify_tasks(&self, tasks: impl Iterator<Item = TaskType>, is_priority: bool) -> Result<()> {
         for task in tasks {
             notify_rust::Notification::new()
-                .summary(&*format!("{}", task))
+                .summary(&format!("{}", task))
                 .appname(NOTIFY_APPNAME)
                 .timeout(Duration::from_secs(60))
-                .hint(Hint::Urgency(if is_priority { Urgency::Critical } else { Urgency::Normal }))
+                .hint(Hint::Urgency(if is_priority {
+                    Urgency::Critical
+                } else {
+                    Urgency::Normal
+                }))
                 .show()?;
         }
 

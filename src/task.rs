@@ -101,14 +101,6 @@ impl TaskType {
 }
 
 impl Task {
-    pub fn new(ty: TaskType, schedule: Schedule) -> Self {
-        Self {
-            ty,
-            schedule,
-            last_done: Local::now(),
-        }
-    }
-
     pub fn ty(&self) -> &TaskType {
         &self.ty
     }

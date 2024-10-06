@@ -217,7 +217,7 @@ impl LilGuyState {
         let now = Instant::now();
         if self.pos.0 < room_bounds.0.start {
             self.current_animation = LilGuyAnimation::WalkRight;
-        } else if self.pos.0 + self.animations.max_bounds.1 as i32 > room_bounds.0.end {
+        } else if self.pos.0 + self.animations.max_bounds.0 as i32 > room_bounds.0.end {
             self.current_animation = LilGuyAnimation::WalkLeft;
         } else if let Some(task) = ongoing_task {
             self.current_animation = LilGuyAnimation::Task(task.clone());
