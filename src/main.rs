@@ -17,7 +17,7 @@ along with Tamagotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
-use std::{fs::File, io::BufWriter};
+use std::{fs::File, io::BufWriter, panic};
 
 use color_eyre::{eyre::OptionExt, Result};
 use config::Config;
@@ -39,6 +39,10 @@ fn not_main() -> Result<()> {
         simplelog::Config::default(),
         File::create("log.txt").unwrap(),
     )?;
+
+    panic::set_hook(Box::new(|msg| {
+        error!("Wheeeeeeee!!! PANIC UWUUU OWOOO (can you tell I had caffine before writing this message). Also, if you want, here's the message: {msg}");
+    }));
 
     let dirs =
         directories::ProjectDirs::from("ca.vedapowered", "Trans Girlies", "Tamagotchi Health")

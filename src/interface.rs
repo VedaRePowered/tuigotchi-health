@@ -19,6 +19,7 @@ along with Tamagotchi Health. If not, see
 use std::{
     collections::{BTreeMap, VecDeque},
     io::Write,
+    path::PathBuf,
     time::{Duration, Instant},
 };
 
@@ -58,6 +59,7 @@ pub struct InterfaceState {
     task_animation_duration: Duration,
     mood: &'static str,
     char_name: String,
+    temp_icon_path: PathBuf,
 }
 
 impl InterfaceState {
@@ -70,6 +72,8 @@ impl InterfaceState {
             Clear(ClearType::All)
         )?;
         terminal::enable_raw_mode()?;
+        let temp_icon_path = std::env::temp_dir().join("__kitty_notification_icon.png");
+        std::fs::write(&temp_icon_path, include_bytes!("kitty_icon.png"))?;
         Ok(InterfaceState {
             lil_guy: LilGuyState::new(
                 conf.character,
@@ -85,6 +89,7 @@ impl InterfaceState {
             task_animation_duration: conf.task_animation_duration,
             mood: "",
             char_name: conf.character_name().to_string(),
+            temp_icon_path,
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -154,7 +159,7 @@ impl InterfaceState {
         self.tasks = new_tasks;
 
         if let Some((_task_type, end_time)) = &self.current_task_animation {
-            if *end_time > now_std {
+            if *end_time < now_std {
                 self.current_task_animation = None;
             }
         }
@@ -236,6 +241,7 @@ impl InterfaceState {
                 } else {
                     Urgency::Normal
                 }))
+                .icon(&self.temp_icon_path.to_string_lossy())
                 .show()?;
         }
 

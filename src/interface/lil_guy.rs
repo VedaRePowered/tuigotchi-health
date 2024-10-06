@@ -73,7 +73,7 @@ impl Animations {
                             .trim_start_matches("frame ")
                             .trim_end_matches("ms");
                         let frame_time: f64 = frame_time.parse()?;
-                        let frame_time = Duration::from_secs_f64(frame_time / 1000.0);
+                        let frame_time = std::time::Duration::from_secs_f64(frame_time / 1000.0);
                         Ok(AnimationFrame {
                             duration: frame_time,
                             lines: frame_lines[1..].iter().map(|s| s.to_string()).collect(),
@@ -215,33 +215,49 @@ impl LilGuyState {
         room_bounds: (Range<i32>, Range<i32>),
     ) -> Result<()> {
         let now = Instant::now();
-        if self.pos.0 < room_bounds.0.start {
-            self.current_animation = LilGuyAnimation::WalkRight;
+        let new_animation = if self.pos.0 < room_bounds.0.start {
+            Some(LilGuyAnimation::WalkRight)
         } else if self.pos.0 + self.animations.max_bounds.0 as i32 > room_bounds.0.end {
-            self.current_animation = LilGuyAnimation::WalkLeft;
+            Some(LilGuyAnimation::WalkLeft)
         } else if let Some(task) = ongoing_task {
-            self.current_animation = LilGuyAnimation::Task(task.clone());
+            Some(LilGuyAnimation::Task(task.clone()))
         } else if happiness < 0.6 {
             let sad_level = (((1.0 - happiness / 0.6) * (self.animations.max_sadness as f32 + 1.0))
                 .floor() as u32)
                 .clamp(0, 1);
-            self.current_animation = LilGuyAnimation::Sad(sad_level);
+            Some(LilGuyAnimation::Sad(sad_level))
         } else if self.idle_animation_change < Instant::now() {
             let mut rng = thread_rng();
             self.idle_animation_change =
                 Instant::now() + rng.gen_range(self.idle_animation_time.clone());
             // FIXME: I don't like this but eh I'll fix it later...
             if rng.gen_ratio(1, 3) {
-                self.current_animation = if rng.gen_bool(0.5) {
+                Some(if rng.gen_bool(0.5) {
                     LilGuyAnimation::WalkLeft
                 } else {
                     LilGuyAnimation::WalkRight
-                };
+                })
             } else if rng.gen_ratio(1, 2) {
-                self.current_animation = LilGuyAnimation::Idle;
+                Some(LilGuyAnimation::Idle)
+            } else {
+                None
+            }
+        } else if ongoing_task.is_none()
+            && matches!(self.current_animation, LilGuyAnimation::Task(_))
+        {
+            Some(LilGuyAnimation::Idle)
+        } else {
+            None
+        };
+        if let Some(new_animation) = new_animation {
+            if self.current_animation != new_animation {
+                self.current_animation = new_animation;
+                self.animation_frame = 0;
+                self.next_frame_time = now;
             }
         }
         let anim = &self.animations.get(&self.current_animation)?;
+        // Reset the animation frame if the animation switches
         if now > self.next_frame_time {
             self.animation_frame += 1;
             if self.animation_frame >= anim.len() {

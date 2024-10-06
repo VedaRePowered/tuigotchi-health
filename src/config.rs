@@ -104,7 +104,9 @@ impl Config {
     }
 
     pub fn character_name(&self) -> &'_ str {
-        self.character_name.as_deref().unwrap_or_else(|| self.character.character_name())
+        self.character_name
+            .as_deref()
+            .unwrap_or_else(|| self.character.character_name())
     }
 }
 
