@@ -82,8 +82,8 @@ impl Task {
         }
     }
 
-    pub fn ty(&self) -> TaskType {
-        self.ty.clone()
+    pub fn ty(&self) -> &TaskType {
+        &self.ty
     }
 
     pub fn schedule(&self) -> Schedule {

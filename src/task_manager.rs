@@ -58,7 +58,7 @@ impl TaskManager {
 
         for task in &self.tasks {
             let task_due = TaskDue {
-                ty: task.ty(),
+                ty: task.ty().clone(),
                 // We actually want to find the "next instance" in
                 // relation to when it was last done, rather than now;
                 // this gives the time when the task *should* be done,
