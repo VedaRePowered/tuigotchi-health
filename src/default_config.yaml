@@ -8,21 +8,21 @@ task_animation_duration: 5sec
 tasks:
   - type: Eat
     schedule: !Times
-      - 9:00:00
-      - 12:30:00
-      - 18:00:00
+      - 9:00
+      - 12:30
+      - 18:00
   - type: Drink
     schedule: !Interval 30min
   - type: Brush Teeth
     schedule: !Times
-      - 22:00:00
+      - 22:00
   - type: Shower
     schedule: !Times
-      - 23:00:00
+      - 23:00
   - type: Eyes Rest
     schedule: !Interval 20min
   - type: Sleep
     schedule: !Times
-      - 00:00:00
+      - 00:00
   - type: Bathroom
     schedule: !Interval 60min
