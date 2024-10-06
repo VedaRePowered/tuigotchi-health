@@ -218,7 +218,7 @@ frame 100ms
 | |     | |
  w _o___ w
 animation task/eat
-frame 200ms
+frame 500ms
    /\_/\
   /.   .\  nom
   \  v  /
@@ -226,7 +226,7 @@ frame 200ms
 / |     | \
 | |     | |
  w _____ w 
-frame 200ms
+frame 500ms
    /\_/\
   /.   .\
   \  o  /
