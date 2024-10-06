@@ -24,6 +24,7 @@ use crossterm::{
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute, queue,
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
+    cursor
 };
 use log::info;
 use visual::LilGuyState;
@@ -50,6 +51,7 @@ impl InterfaceState {
     pub fn new(conf: &Config) -> Result<Self> {
         let mut stdout = std::io::stdout();
         execute!(stdout, EnterAlternateScreen, Clear(ClearType::All))?;
+        execute!(stdout, cursor::Hide, Clear(ClearType::All))?;
         terminal::enable_raw_mode()?;
         Ok(InterfaceState {
             lil_guy: LilGuyState::new(
