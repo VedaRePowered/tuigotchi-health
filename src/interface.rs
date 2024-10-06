@@ -203,6 +203,11 @@ impl InterfaceState {
         )?;
         self.lil_guy
             .render(writer, (2, screen_size.rows as i32 - text_height))?;
+        queue!(
+            writer,
+            MoveTo(3, screen_size.rows - text_height as u16),
+            Print("=".repeat(screen_size.columns as usize - 6))
+        )?;
         for (i, (keybind, task_type)) in self.keybinds.iter().enumerate() {
             queue!(
                 writer,
