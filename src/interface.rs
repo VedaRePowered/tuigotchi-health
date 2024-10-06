@@ -57,7 +57,7 @@ pub struct InterfaceState {
     current_task_animation: Option<(TaskType, Instant)>,
     task_animation_duration: Duration,
     mood: &'static str,
-    char_name: &'static str,
+    char_name: String,
 }
 
 impl InterfaceState {
@@ -84,7 +84,7 @@ impl InterfaceState {
             current_task_animation: None,
             task_animation_duration: conf.task_animation_duration,
             mood: "",
-            char_name: conf.character.character_name(),
+            char_name: conf.character_name().to_string(),
         })
     }
     /// Update the state of the interface, will run every ~100ms

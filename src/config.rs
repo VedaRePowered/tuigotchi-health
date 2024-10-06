@@ -51,6 +51,7 @@ enum ColorDef {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub character: CharacterChoice,
+    pub character_name: Option<String>,
     #[serde(with = "humantime_serde")]
     pub task_timeout: Duration,
     #[serde(with = "humantime_serde")]
@@ -100,6 +101,10 @@ impl Config {
             serde_yaml::to_writer(File::create(&path)?, &config)?;
             config
         })
+    }
+
+    pub fn character_name(&self) -> &'_ str {
+        self.character_name.as_deref().unwrap_or_else(|| self.character.character_name())
     }
 }
 
