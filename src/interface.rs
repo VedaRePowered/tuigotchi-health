@@ -81,7 +81,7 @@ impl InterfaceState {
             }
         }
         let now = Local::now();
-        let new_tasks = task_manager.get_tasks(now)?;
+        let new_tasks = task_manager.tasks(now)?;
         let notify_tasks = new_tasks
             .current
             .iter()

@@ -28,7 +28,11 @@ use color_eyre::{
     eyre::{bail, OptionExt},
     Result,
 };
-use crossterm::{cursor::MoveTo, queue, style::{self, Print}};
+use crossterm::{
+    cursor::MoveTo,
+    queue,
+    style::{self, Print},
+};
 use rand::{thread_rng, Rng};
 
 use crate::{config::CharacterChoice, task::TaskType};
@@ -114,7 +118,7 @@ impl Animations {
             .get(anim)
             .map(|frames| frames.as_slice())
             .ok_or_eyre("No animation!")
-            .or_else(|_| self.get(&anim.get_fallback()?))
+            .or_else(|_| self.get(&anim.fallback()?))
     }
 }
 
@@ -137,7 +141,7 @@ pub enum LilGuyAnimation {
 }
 
 impl LilGuyAnimation {
-    fn get_fallback(&self) -> Result<LilGuyAnimation> {
+    fn fallback(&self) -> Result<LilGuyAnimation> {
         Ok(match self {
             LilGuyAnimation::WalkLeft => LilGuyAnimation::Walk,
             LilGuyAnimation::WalkRight => LilGuyAnimation::Walk,
@@ -188,9 +192,13 @@ impl FromStr for LilGuyAnimation {
 }
 
 impl LilGuyState {
-    pub fn new(character: CharacterChoice, colour: [u8; 3], idle_animation_time: Range<Duration>) -> Result<Self> {
+    pub fn new(
+        character: CharacterChoice,
+        colour: [u8; 3],
+        idle_animation_time: Range<Duration>,
+    ) -> Result<Self> {
         Ok(LilGuyState {
-            animations: Animations::load(character.get_animation_file())?,
+            animations: Animations::load(character.animation_file())?,
             colour,
             current_animation: LilGuyAnimation::Idle,
             animation_frame: 0,
@@ -252,10 +260,17 @@ impl LilGuyState {
         let pos = (center.0 + self.pos.0, center.1 + self.pos.1);
         let frame = &self.animations.get(&self.current_animation)?[self.animation_frame];
         let y_offset = self.animations.max_bounds.1 as i32 - frame.lines.len() as i32;
-        queue!(writer, style::SetColors(style::Colors {
-            foreground: Some(style::Color::Rgb { r: self.colour[0], g: self.colour[1], b: self.colour[2] }),
-            background: None
-        }))?;
+        queue!(
+            writer,
+            style::SetColors(style::Colors {
+                foreground: Some(style::Color::Rgb {
+                    r: self.colour[0],
+                    g: self.colour[1],
+                    b: self.colour[2]
+                }),
+                background: None
+            })
+        )?;
         for (y, line) in frame.lines.iter().enumerate() {
             queue!(
                 writer,

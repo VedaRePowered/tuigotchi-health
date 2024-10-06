@@ -49,7 +49,7 @@ impl TaskManager {
         })
     }
 
-    pub fn get_tasks(&self, now: DateTime<Local>) -> Result<Tasks> {
+    pub fn tasks(&self, now: DateTime<Local>) -> Result<Tasks> {
         let mut tasks = Tasks {
             past: vec![],
             current: vec![],
@@ -79,6 +79,9 @@ impl TaskManager {
     }
 
     pub fn complete_tasks(&mut self, ty: &TaskType, now: DateTime<Local>) {
-        self.tasks.iter_mut().filter(|t| t.ty() == ty).for_each(|t| Task::complete(t, now));
+        self.tasks
+            .iter_mut()
+            .filter(|t| t.ty() == ty)
+            .for_each(|t| Task::complete(t, now));
     }
 }
