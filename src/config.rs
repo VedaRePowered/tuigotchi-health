@@ -19,8 +19,8 @@ along with Tamagotchi Health. If not, see
 use std::{fs::File, path::Path, time::Duration};
 
 use color_eyre::Result;
-use serde::{Deserialize, Serialize};
 use crossterm::style::Color;
+use serde::{Deserialize, Serialize};
 
 use crate::task::Task;
 
@@ -44,11 +44,7 @@ enum ColorDef {
     DarkCyan,
     White,
     Grey,
-    Rgb {
-        r: u8,
-        g: u8,
-        b: u8,
-    },
+    Rgb { r: u8, g: u8, b: u8 },
     AnsiValue(u8),
 }
 
