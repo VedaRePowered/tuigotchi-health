@@ -26,13 +26,13 @@ use crate::task::Task;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub character: CharacterChoice,
-    #[serde(with = "humantime_serde")] 
+    #[serde(with = "humantime_serde")]
     pub task_timeout: Duration,
-    #[serde(with = "humantime_serde")] 
+    #[serde(with = "humantime_serde")]
     pub task_timeout_max: Duration,
-    #[serde(with = "humantime_serde")] 
+    #[serde(with = "humantime_serde")]
     pub idle_animation_time_min: Duration,
-    #[serde(with = "humantime_serde")] 
+    #[serde(with = "humantime_serde")]
     pub idle_animation_time_max: Duration,
     colour: [u8; 3],
     pub tasks: Vec<Task>,
