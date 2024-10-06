@@ -40,7 +40,7 @@ use crate::{config::CharacterChoice, task::TaskType};
 #[derive(Debug)]
 pub struct LilGuyState {
     animations: Animations,
-    colour: [u8; 3],
+    colour: style::Color,
     current_animation: LilGuyAnimation,
     animation_frame: usize,
     next_frame_time: Instant,
@@ -194,7 +194,7 @@ impl FromStr for LilGuyAnimation {
 impl LilGuyState {
     pub fn new(
         character: CharacterChoice,
-        colour: [u8; 3],
+        colour: style::Color,
         idle_animation_time: Range<Duration>,
     ) -> Result<Self> {
         Ok(LilGuyState {
@@ -263,11 +263,7 @@ impl LilGuyState {
         queue!(
             writer,
             style::SetColors(style::Colors {
-                foreground: Some(style::Color::Rgb {
-                    r: self.colour[0],
-                    g: self.colour[1],
-                    b: self.colour[2]
-                }),
+                foreground: Some(self.colour),
                 background: None
             })
         )?;

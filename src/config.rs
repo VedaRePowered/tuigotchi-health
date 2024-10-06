@@ -20,8 +20,37 @@ use std::{fs::File, path::Path, time::Duration};
 
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
+use crossterm::style::Color;
 
 use crate::task::Task;
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Color")]
+enum ColorDef {
+    Reset,
+    Black,
+    DarkGrey,
+    Red,
+    DarkRed,
+    Green,
+    DarkGreen,
+    Yellow,
+    DarkYellow,
+    Blue,
+    DarkBlue,
+    Magenta,
+    DarkMagenta,
+    Cyan,
+    DarkCyan,
+    White,
+    Grey,
+    Rgb {
+        r: u8,
+        g: u8,
+        b: u8,
+    },
+    AnsiValue(u8),
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
@@ -36,7 +65,8 @@ pub struct Config {
     pub idle_animation_time_max: Duration,
     #[serde(with = "humantime_serde")]
     pub task_animation_duration: Duration,
-    pub colour: [u8; 3],
+    #[serde(with = "ColorDef")]
+    pub colour: Color,
     pub tasks: Vec<Task>,
 }
 
