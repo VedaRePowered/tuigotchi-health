@@ -99,14 +99,14 @@ impl Animations {
                 anims
                     .values()
                     .flatten()
-                    .map(|frame| frame.lines.len() as u32)
+                    .flat_map(|frame| frame.lines.iter())
+                    .map(|line| line.len() as u32)
                     .max()
                     .unwrap_or(1),
                 anims
                     .values()
                     .flatten()
-                    .flat_map(|frame| frame.lines.iter())
-                    .map(|line| line.len() as u32)
+                    .map(|frame| frame.lines.len() as u32)
                     .max()
                     .unwrap_or(1),
             ),
@@ -259,7 +259,7 @@ impl LilGuyState {
     pub fn render(&self, writer: &mut impl Write, center: (i32, i32)) -> Result<()> {
         let pos = (center.0 + self.pos.0, center.1 + self.pos.1);
         let frame = &self.animations.get(&self.current_animation)?[self.animation_frame];
-        let y_offset = self.animations.max_bounds.1 as i32 - frame.lines.len() as i32;
+        let y_offset = -(frame.lines.len() as i32);
         queue!(
             writer,
             style::SetColors(style::Colors {
@@ -276,7 +276,7 @@ impl LilGuyState {
                 writer,
                 MoveTo(
                     pos.0.clamp(0, 65535) as u16,
-                    (pos.1 + y_offset + y as i32).clamp(0, 65535) as u16
+                    (pos.1 + y as i32 + y_offset).clamp(0, 65535) as u16
                 ),
                 Print(line),
             )?;

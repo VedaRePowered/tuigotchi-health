@@ -52,8 +52,6 @@ pub enum TaskType {
 
 impl fmt::Display for TaskType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use TaskType::*;
-
         let disp = match self {
             TaskType::Eat => "I'm hungry!",
             TaskType::Drink => "I'm thirsty!",
@@ -70,6 +68,35 @@ impl fmt::Display for TaskType {
         };
 
         write!(f, "{}", disp)
+    }
+}
+
+impl TaskType {
+    pub fn keybind(&self) -> Option<char> {
+        match self {
+            TaskType::Eat => Some('e'),
+            TaskType::Drink => Some('d'),
+            TaskType::BrushTeeth => Some('t'),
+            TaskType::Shower => Some('s'),
+            TaskType::EyesRest => Some('y'),
+            TaskType::TakeMeds => Some('m'),
+            TaskType::Sleep => Some('l'),
+            TaskType::Bathroom => Some('b'),
+            TaskType::Other(_) => None,
+        }
+    }
+    pub fn verb(&self) -> &'static str {
+        match self {
+            TaskType::Eat => "feed",
+            TaskType::Drink => "drink",
+            TaskType::BrushTeeth => "brush",
+            TaskType::Shower => "wash",
+            TaskType::EyesRest => "look away",
+            TaskType::TakeMeds => "take meds",
+            TaskType::Sleep => "go eepy",
+            TaskType::Bathroom => "use the washroom",
+            TaskType::Other(_) => "complete",
+        }
     }
 }
 

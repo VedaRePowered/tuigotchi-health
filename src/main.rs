@@ -44,10 +44,10 @@ fn not_main() -> Result<()> {
         directories::ProjectDirs::from("ca.vedapowered", "Trans Girlies", "Tamagotchi Health")
             .ok_or_eyre("Failed to load config dir!")?;
     let mut config = Config::load_config(dirs.config_dir())?;
-    let task_manager = TaskManager::new(&mut config)?;
+    let mut task_manager = TaskManager::new(&mut config)?;
     let mut interface = InterfaceState::new(&config)?;
     let mut stdout = BufWriter::new(std::io::stdout());
-    while interface.update(&task_manager)? {
+    while interface.update(&mut task_manager)? {
         if let Err(e) = interface.render(&mut stdout) {
             warn!("Rendering error: {e}");
         }
