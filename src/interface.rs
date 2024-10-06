@@ -36,6 +36,8 @@ use crossterm::{
 use lil_guy::LilGuyState;
 use log::info;
 use notify_rust::{Hint, NotificationHandle, Urgency};
+use rand::{self, seq::SliceRandom};
+use playback_rs::{Player, Song};
 
 use crate::{
     config::Config,
@@ -47,7 +49,6 @@ mod lil_guy;
 
 const NOTIFY_APPNAME: &str = "tamagotchi-health";
 
-#[derive(Debug)]
 pub struct InterfaceState {
     lil_guy: LilGuyState,
     tasks: Tasks,
@@ -61,6 +62,8 @@ pub struct InterfaceState {
     char_name: String,
     temp_icon_path: PathBuf,
     notifications: Vec<(TaskType, Option<NotificationHandle>)>,
+    temp_meow_paths: Vec<PathBuf>,
+    player: Player
 }
 
 impl InterfaceState {
@@ -75,6 +78,10 @@ impl InterfaceState {
         terminal::enable_raw_mode()?;
         let temp_icon_path = std::env::temp_dir().join("__kitty_notification_icon.png");
         std::fs::write(&temp_icon_path, include_bytes!("kitty_icon.png"))?;
+        let temp_meow1_path = std::env::temp_dir().join("__meow1.wav");
+        std::fs::write(&temp_meow1_path, include_bytes!("sounds/meow1.wav"))?;
+        let temp_meow2_path = std::env::temp_dir().join("__meow2.wav");
+        std::fs::write(&temp_meow2_path, include_bytes!("sounds/meow2.wav"))?;
         Ok(InterfaceState {
             lil_guy: LilGuyState::new(
                 conf.character,
@@ -92,6 +99,8 @@ impl InterfaceState {
             char_name: conf.character_name().to_string(),
             temp_icon_path,
             notifications: Vec::new(),
+            temp_meow_paths: vec![temp_meow1_path, temp_meow2_path],
+            player: Player::new(None)?
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -251,6 +260,8 @@ impl InterfaceState {
         tasks: impl Iterator<Item = TaskType>,
         is_priority: bool,
     ) -> Result<()> {
+        let mut was_task = false;
+
         for task in tasks {
             self.notifications.push((
                 task.clone(),
@@ -268,6 +279,13 @@ impl InterfaceState {
                         .show()?,
                 ),
             ));
+
+            was_task = true;
+        }
+
+        if was_task {
+            let song = Song::from_file(self.temp_meow_paths.choose(&mut rand::thread_rng()).unwrap(), None)?;
+            self.player.play_song_next(&song, None)?;
         }
 
         Ok(())
