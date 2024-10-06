@@ -25,4 +25,4 @@
 + [ ] Lizard
 + [ ] Poop
 + [X] Rename the guy
-
++ [ ] Idle animations
