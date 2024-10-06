@@ -1,18 +1,18 @@
 /*
-This file is part of Tamagotchi Health.
+This file is part of Tuigotchi Health.
 
-Tamagotchi Health is free software: you can redistribute it and/or
+Tuigotchi Health is free software: you can redistribute it and/or
 modify it under the terms of the GNU General Public License as
 published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version.
 
-Tamagotchi Health is distributed in the hope that it will be useful,
+Tuigotchi Health is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
 General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with Tamagotchi Health. If not, see
+along with Tuigotchi Health. If not, see
 <https://www.gnu.org/licenses/>.
 */
 
@@ -46,7 +46,7 @@ use crate::{
 
 mod lil_guy;
 
-const NOTIFY_APPNAME: &str = "tamagotchi-health";
+const NOTIFY_APPNAME: &str = "tuigotchi-health";
 
 pub struct InterfaceState {
     lil_guy: LilGuyState,
@@ -228,7 +228,7 @@ impl InterfaceState {
                 0i32..screen_size.columns as i32 - 4,
                 0i32..screen_size.rows as i32 - 12.max(self.keybinds.len() as i32 + 2),
             ),
-            &*self.tasks.past,
+            &self.tasks.past,
         )?;
         Ok(true)
     }
@@ -240,10 +240,7 @@ impl InterfaceState {
         queue!(
             writer,
             MoveTo(10, 2),
-            Print(format!(
-                "{} is ",
-                self.char_name,
-            ).with(self.text_colour)),
+            Print(format!("{} is ", self.char_name,).with(self.text_colour)),
             Print(self.mood),
             Print(".".with(self.text_colour)),
         )?;
@@ -252,7 +249,10 @@ impl InterfaceState {
         queue!(
             writer,
             MoveTo(3, screen_size.rows - text_height as u16),
-            Print("=".repeat(screen_size.columns as usize - 6).with(self.text_colour))
+            Print(
+                "=".repeat(screen_size.columns as usize - 6)
+                    .with(self.text_colour)
+            )
         )?;
         for (i, (keybind, task_type)) in self.keybinds.iter().enumerate() {
             queue!(
