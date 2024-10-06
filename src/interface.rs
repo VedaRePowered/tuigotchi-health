@@ -35,7 +35,7 @@ use crossterm::{
 };
 use lil_guy::LilGuyState;
 use log::info;
-use notify_rust::{Hint, Urgency};
+use notify_rust::{Hint, NotificationHandle, Urgency};
 
 use crate::{
     config::Config,
@@ -60,6 +60,7 @@ pub struct InterfaceState {
     mood: &'static str,
     char_name: String,
     temp_icon_path: PathBuf,
+    notifications: Vec<(TaskType, Option<NotificationHandle>)>,
 }
 
 impl InterfaceState {
@@ -90,6 +91,7 @@ impl InterfaceState {
             mood: "",
             char_name: conf.character_name().to_string(),
             temp_icon_path,
+            notifications: Vec::new(),
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -136,6 +138,18 @@ impl InterfaceState {
                 }) => {
                     if let Some(task_type) = self.keybinds.remove(&key) {
                         task_manager.complete_tasks(&task_type, now);
+                        // This would be so much nicer if retain was still drain_filter...
+                        self.notifications.retain_mut(|(ty, notif)| {
+                            if ty == &task_type {
+                                if let Some(notif) = notif.take() {
+                                    log::info!("Closing notification: {notif:?}");
+                                    notif.close();
+                                }
+                                false
+                            } else {
+                                true
+                            }
+                        });
                         self.task_animations.push_back(task_type);
                     }
                 }
@@ -144,18 +158,20 @@ impl InterfaceState {
         }
         let new_tasks = task_manager.tasks(now)?;
         // This is ugly but uhhh err ummm uhh... Look! Over there! The Good Year blimp!
-        let notify_tasks = new_tasks
+        let notify_tasks: Vec<_> = new_tasks
             .current
             .iter()
             .filter(|task| !self.tasks.current.contains(task))
-            .map(|task| task.ty.clone());
-        self.notify_tasks(notify_tasks, false)?;
-        let priority_notify_tasks = new_tasks
+            .map(|task| task.ty.clone())
+            .collect();
+        self.notify_tasks(notify_tasks.into_iter(), false)?;
+        let priority_notify_tasks: Vec<_> = new_tasks
             .past
             .iter()
             .filter(|task| !self.tasks.past.contains(task))
-            .map(|task| task.ty.clone());
-        self.notify_tasks(priority_notify_tasks, true)?;
+            .map(|task| task.ty.clone())
+            .collect();
+        self.notify_tasks(priority_notify_tasks.into_iter(), true)?;
         self.tasks = new_tasks;
 
         if let Some((_task_type, end_time)) = &self.current_task_animation {
@@ -230,19 +246,28 @@ impl InterfaceState {
     }
 
     /// Send a notification and play a sound for a task
-    fn notify_tasks(&self, tasks: impl Iterator<Item = TaskType>, is_priority: bool) -> Result<()> {
+    fn notify_tasks(
+        &mut self,
+        tasks: impl Iterator<Item = TaskType>,
+        is_priority: bool,
+    ) -> Result<()> {
         for task in tasks {
-            notify_rust::Notification::new()
-                .summary(&format!("{}", task))
-                .appname(NOTIFY_APPNAME)
-                .timeout(Duration::from_secs(60))
-                .hint(Hint::Urgency(if is_priority {
-                    Urgency::Critical
-                } else {
-                    Urgency::Normal
-                }))
-                .icon(&self.temp_icon_path.to_string_lossy())
-                .show()?;
+            self.notifications.push((
+                task.clone(),
+                Some(
+                    notify_rust::Notification::new()
+                        .summary(&format!("{}", task))
+                        .appname(NOTIFY_APPNAME)
+                        .timeout(Duration::from_secs(60))
+                        .hint(Hint::Urgency(if is_priority {
+                            Urgency::Critical
+                        } else {
+                            Urgency::Normal
+                        }))
+                        .icon(&self.temp_icon_path.to_string_lossy())
+                        .show()?,
+                ),
+            ));
         }
 
         Ok(())

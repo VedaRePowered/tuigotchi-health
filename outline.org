@@ -15,7 +15,7 @@
 
 ** TODO
 + [ ] sounds
-+ [X] icon
++ [x] icon
 + [ ] use want animations
 + [ ] make ouppy
 + [ ] clear notifications
