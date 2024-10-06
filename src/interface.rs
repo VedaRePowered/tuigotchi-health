@@ -50,8 +50,7 @@ pub struct InterfaceState {
 impl InterfaceState {
     pub fn new(conf: &Config) -> Result<Self> {
         let mut stdout = std::io::stdout();
-        execute!(stdout, EnterAlternateScreen, Clear(ClearType::All))?;
-        execute!(stdout, cursor::Hide, Clear(ClearType::All))?;
+        execute!(stdout, EnterAlternateScreen, cursor::Hide, Clear(ClearType::All))?;
         terminal::enable_raw_mode()?;
         Ok(InterfaceState {
             lil_guy: LilGuyState::new(
@@ -131,7 +130,8 @@ impl Drop for InterfaceState {
         let _ = execute!(
             std::io::stdout(),
             Clear(ClearType::All),
-            LeaveAlternateScreen
+            LeaveAlternateScreen,
+            cursor::Show,
         );
         let _ = terminal::disable_raw_mode();
     }
