@@ -3,7 +3,7 @@ task_timeout: 30min
 task_timeout_max: 60min
 idle_animation_time_min: 5sec
 idle_animation_time_max: 30sec
-colour: DarkMagenta
+colour: Magenta
 task_animation_duration: 5sec
 tasks:
   - type: Eat
