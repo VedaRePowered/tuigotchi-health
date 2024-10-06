@@ -33,6 +33,7 @@ use crossterm::{
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use log::info;
+use notify_rust::{Hint, Timeout, Urgency};
 use visual::LilGuyState;
 
 use crate::{
@@ -133,12 +134,19 @@ impl InterfaceState {
             }
         }
         let new_tasks = task_manager.tasks(now)?;
+        // This is ugly but uhhh err ummm uhh... Look! Over there! The Good Year blimp!
         let notify_tasks = new_tasks
             .current
             .iter()
             .filter(|task| !self.tasks.current.contains(&task))
             .map(|task| task.ty.clone());
-        self.notify_tasks(notify_tasks)?;
+        self.notify_tasks(notify_tasks, false)?;
+        let priority_notify_tasks = new_tasks
+            .past
+            .iter()
+            .filter(|task| !self.tasks.past.contains(&task))
+            .map(|task| task.ty.clone());
+        self.notify_tasks(priority_notify_tasks, true)?;
         self.tasks = new_tasks;
 
         if let Some((_task_type, end_time)) = &self.current_task_animation {
@@ -202,11 +210,17 @@ impl InterfaceState {
     }
 
     /// Send a notification and play a sound for a task
-    fn notify_tasks<'a>(&self, tasks: impl Iterator<Item = TaskType>) -> Result<()> {
+    fn notify_tasks<'a>(
+        &self,
+        tasks: impl Iterator<Item = TaskType>,
+        is_priority: bool,
+    ) -> Result<()> {
         for task in tasks {
             notify_rust::Notification::new()
                 .summary(&*format!("{}", task))
                 .appname(NOTIFY_APPNAME)
+                .timeout(Duration::from_secs(60))
+                .hint(Hint::Urgency(if is_priority { Urgency::Critical } else { Urgency::Normal }))
                 .show()?;
         }
 
