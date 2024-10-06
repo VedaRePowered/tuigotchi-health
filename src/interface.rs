@@ -26,11 +26,10 @@ use std::{
 use chrono::Local;
 use color_eyre::Result;
 use crossterm::{
-    cursor,
-    cursor::MoveTo,
+    cursor::{self, MoveTo},
     event::{self, Event, KeyCode, KeyEvent, KeyModifiers},
     execute, queue,
-    style::Print,
+    style::{self, Print, StyledContent, Stylize},
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use lil_guy::LilGuyState;
@@ -58,12 +57,14 @@ pub struct InterfaceState {
     task_animations: VecDeque<TaskType>,
     current_task_animation: Option<(TaskType, Instant)>,
     task_animation_duration: Duration,
-    mood: &'static str,
+    mood: StyledContent<&'static str>,
     char_name: String,
     temp_icon_path: PathBuf,
     notifications: Vec<(TaskType, Option<NotificationHandle>)>,
     temp_meow_paths: Vec<PathBuf>,
     player: Player,
+    text_colour: crossterm::style::Color,
+    task_colour: crossterm::style::Color,
 }
 
 impl InterfaceState {
@@ -95,12 +96,14 @@ impl InterfaceState {
             task_animations: VecDeque::new(),
             current_task_animation: None,
             task_animation_duration: conf.task_animation_duration,
-            mood: "",
+            mood: "".with(style::Color::Grey),
             char_name: conf.character_name().to_string(),
             temp_icon_path,
             notifications: Vec::new(),
             temp_meow_paths: vec![temp_meow1_path, temp_meow2_path],
             player: Player::new(None)?,
+            text_colour: conf.text_colour,
+            task_colour: conf.task_colour,
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -209,12 +212,12 @@ impl InterfaceState {
                 .sum::<f32>()
                 .clamp(0.0, 1.0);
         self.mood = match happiness {
-            ..=0.1 => "Very Sad",
-            0.1..=0.4 => "Sad",
-            0.4..=0.6 => "Neutral",
-            0.6..=0.9 => "Happy",
-            0.9.. => "Very Happy",
-            _ => "Unknown",
+            ..=0.1 => "Very Sad".with(style::Color::DarkRed),
+            0.1..=0.4 => "Sad".with(style::Color::DarkMagenta),
+            0.4..=0.6 => "Neutral".with(style::Color::Grey),
+            0.6..=0.9 => "Happy".with(style::Color::Blue),
+            0.9.. => "Very Happy".with(style::Color::Green),
+            _ => "Unknown".with(style::Color::Magenta),
         };
 
         let screen_size = terminal::window_size()?;
@@ -237,25 +240,29 @@ impl InterfaceState {
         queue!(
             writer,
             MoveTo(10, 2),
-            Print(format!("{} is {}.", self.char_name, self.mood))
+            Print(format!(
+                "{} is ",
+                self.char_name,
+            ).with(self.text_colour)),
+            Print(self.mood),
+            Print(".".with(self.text_colour)),
         )?;
         self.lil_guy
             .render(writer, (2, screen_size.rows as i32 - text_height))?;
         queue!(
             writer,
             MoveTo(3, screen_size.rows - text_height as u16),
-            Print("=".repeat(screen_size.columns as usize - 6))
+            Print("=".repeat(screen_size.columns as usize - 6).with(self.text_colour))
         )?;
         for (i, (keybind, task_type)) in self.keybinds.iter().enumerate() {
             queue!(
                 writer,
                 MoveTo(10, i as u16 + screen_size.rows - text_height as u16 + 1),
-                Print(format!(
-                    " - {} Press '{}' to {}.",
-                    task_type,
-                    keybind,
-                    task_type.verb()
-                ))
+                Print(" - ".with(self.text_colour)),
+                Print(task_type.to_string().with(self.task_colour)),
+                Print(" Press '".with(self.text_colour)),
+                Print(keybind.to_string().with(self.task_colour)),
+                Print(format!("' to {}.", task_type.verb()).with(self.text_colour)),
             )?;
         }
         writer.flush()?;

@@ -64,6 +64,10 @@ pub struct Config {
     pub task_animation_duration: Duration,
     #[serde(with = "ColorDef")]
     pub colour: Color,
+    #[serde(with = "ColorDef")]
+    pub text_colour: Color,
+    #[serde(with = "ColorDef")]
+    pub task_colour: Color,
     pub tasks: Vec<Task>,
 }
 

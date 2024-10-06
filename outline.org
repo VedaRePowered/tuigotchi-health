@@ -19,10 +19,11 @@
 + [X] use want animations
 + [ ] make ouppy
 + [X] clear notifications
-+ [ ] make UI look slightly nicer (less harsh colours for ui text)
++ [X] make UI look slightly nicer (less harsh colours for ui text)
 + [ ] pride flag themes
 + [ ] unlockables o.o
 + [ ] Lizard
-+ [ ] Poop
++ [ ] Autism Creature
 + [X] Rename the guy
 + [ ] Idle animations
++ [ ] Rework icon/sounds into config :3
