@@ -12,3 +12,13 @@
 ** Implementation
 + ASCII art terminal app
 + Keyboard shortcuts for tasks
+
+** TODO
++ [ ] sounds
++ [ ] use want animations
++ [ ] make ouppy
++ [ ] clear notifications
++ [ ] make UI look slightly nicer (less harsh colours for ui text)
++ [ ] pride flag themes
++ [ ] unlockables o.o
+
