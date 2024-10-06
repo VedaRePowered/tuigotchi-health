@@ -77,4 +77,8 @@ impl TaskManager {
 
         Ok(tasks)
     }
+
+    pub fn complete_tasks(&mut self, ty: &TaskType, now: DateTime<Local>) {
+        self.tasks.iter_mut().filter(|t| t.ty() == ty).for_each(|t| Task::complete(t, now));
+    }
 }
