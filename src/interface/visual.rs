@@ -211,7 +211,7 @@ impl LilGuyState {
     pub fn update(
         &mut self,
         happiness: f32,
-        ongoing_task: Option<TaskType>,
+        ongoing_task: Option<&TaskType>,
         room_bounds: (Range<i32>, Range<i32>),
     ) -> Result<()> {
         let now = Instant::now();
@@ -220,7 +220,7 @@ impl LilGuyState {
         } else if self.pos.0 + self.animations.max_bounds.1 as i32 > room_bounds.0.end {
             self.current_animation = LilGuyAnimation::WalkLeft;
         } else if let Some(task) = ongoing_task {
-            self.current_animation = LilGuyAnimation::Task(task);
+            self.current_animation = LilGuyAnimation::Task(task.clone());
         } else if happiness < 0.6 {
             let sad_level = (((1.0 - happiness / 0.6) * (self.animations.max_sadness as f32 + 1.0))
                 .floor() as u32)

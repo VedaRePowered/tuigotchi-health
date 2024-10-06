@@ -62,7 +62,7 @@ impl fmt::Display for TaskType {
             TaskType::Sleep => "I'm eepy!",
             TaskType::Bathroom => "I have to go!",
             TaskType::Other(d) => {
-                write!(f, "I need to {}", d)?;
+                write!(f, "I need to {}!", d)?;
                 return Ok(());
             }
         };

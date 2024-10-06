@@ -17,9 +17,9 @@ along with Tamagotchi Health. If not, see
 */
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, VecDeque},
     io::Write,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use chrono::Local;
@@ -52,6 +52,9 @@ pub struct InterfaceState {
     keybinds: BTreeMap<char, TaskType>,
     task_timeout: Duration,
     task_timeout_max: Duration,
+    task_animations: VecDeque<TaskType>,
+    current_task_animation: Option<(TaskType, Instant)>,
+    task_animation_duration: Duration,
 }
 
 impl InterfaceState {
@@ -74,6 +77,9 @@ impl InterfaceState {
             keybinds: BTreeMap::new(),
             task_timeout: conf.task_timeout_max,
             task_timeout_max: conf.task_timeout_max,
+            task_animations: VecDeque::new(),
+            current_task_animation: None,
+            task_animation_duration: conf.task_animation_duration,
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -95,6 +101,7 @@ impl InterfaceState {
                 .collect()
         };
         let now = Local::now();
+        let now_std = Instant::now();
         if event::poll(Duration::from_millis(100))? {
             let ev = event::read()?;
             match ev {
@@ -117,8 +124,9 @@ impl InterfaceState {
                     modifiers: KeyModifiers::NONE | KeyModifiers::SHIFT,
                     ..
                 }) => {
-                    if let Some(task_type) = self.keybinds.get(&key) {
-                        task_manager.complete_tasks(task_type, now);
+                    if let Some(task_type) = self.keybinds.remove(&key) {
+                        task_manager.complete_tasks(&task_type, now);
+                        self.task_animations.push_back(task_type);
                     }
                 }
                 _ => info!("Unused event: {ev:?}"),
@@ -132,6 +140,19 @@ impl InterfaceState {
             .map(|task| task.ty.clone());
         self.notify_tasks(notify_tasks)?;
         self.tasks = new_tasks;
+
+        if let Some((_task_type, end_time)) = &self.current_task_animation {
+            if *end_time > now_std {
+                self.current_task_animation = None;
+            }
+        }
+        if self.current_task_animation.is_none() && !self.task_animations.is_empty() {
+            if let Some(task_animation) = self.task_animations.pop_front() {
+                self.current_task_animation =
+                    Some((task_animation, now_std + self.task_animation_duration));
+            }
+        }
+
         let happiness = 1.0
             - self
                 .tasks
@@ -149,7 +170,7 @@ impl InterfaceState {
         let screen_size = terminal::window_size()?;
         self.lil_guy.update(
             happiness,
-            None,
+            self.current_task_animation.as_ref().map(|ta| &ta.0),
             (
                 0i32..screen_size.columns as i32 - 4,
                 0i32..screen_size.rows as i32 - 12.max(self.keybinds.len() as i32 + 2),
@@ -162,19 +183,14 @@ impl InterfaceState {
         let screen_size = terminal::window_size()?;
         let text_height = 12.max(self.keybinds.len() as i32 + 2);
         queue!(writer, Clear(ClearType::All))?;
-        self.lil_guy.render(
-            writer,
-            (
-                2,
-                screen_size.rows as i32 - text_height,
-            ),
-        )?;
+        self.lil_guy
+            .render(writer, (2, screen_size.rows as i32 - text_height))?;
         for (i, (keybind, task_type)) in self.keybinds.iter().enumerate() {
             queue!(
                 writer,
-                MoveTo(10, i as u16 + screen_size.rows - text_height as u16),
+                MoveTo(10, i as u16 + screen_size.rows - text_height as u16 + 1),
                 Print(format!(
-                    " - {}, Press '{}' to {}",
+                    " - {} Press '{}' to {}.",
                     task_type,
                     keybind,
                     task_type.verb()
