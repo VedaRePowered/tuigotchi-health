@@ -72,6 +72,7 @@ pub enum CharacterChoice {
     #[serde(rename = "Debug Guy")]
     DebugGuy,
     Kitty,
+    Puppy,
 }
 
 impl CharacterChoice {
@@ -79,12 +80,14 @@ impl CharacterChoice {
         match self {
             CharacterChoice::DebugGuy => "Debug Guy (very cool)",
             CharacterChoice::Kitty => "Kitted Catte",
+            CharacterChoice::Puppy => "Oggywoggy",
         }
     }
     pub fn animation_file(&self) -> &'static str {
         match self {
             CharacterChoice::DebugGuy => include_str!("animations/debug_guy.txt"),
             CharacterChoice::Kitty => include_str!("animations/kitty.txt"),
+            CharacterChoice::Puppy => include_str!("animations/puppy.txt"),
         }
     }
 }
