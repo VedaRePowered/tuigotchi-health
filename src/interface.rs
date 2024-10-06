@@ -36,8 +36,8 @@ use crossterm::{
 use lil_guy::LilGuyState;
 use log::info;
 use notify_rust::{Hint, NotificationHandle, Urgency};
-use rand::{self, seq::SliceRandom};
 use playback_rs::{Player, Song};
+use rand::{self, seq::SliceRandom};
 
 use crate::{
     config::Config,
@@ -63,7 +63,7 @@ pub struct InterfaceState {
     temp_icon_path: PathBuf,
     notifications: Vec<(TaskType, Option<NotificationHandle>)>,
     temp_meow_paths: Vec<PathBuf>,
-    player: Player
+    player: Player,
 }
 
 impl InterfaceState {
@@ -100,7 +100,7 @@ impl InterfaceState {
             temp_icon_path,
             notifications: Vec::new(),
             temp_meow_paths: vec![temp_meow1_path, temp_meow2_path],
-            player: Player::new(None)?
+            player: Player::new(None)?,
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -225,6 +225,7 @@ impl InterfaceState {
                 0i32..screen_size.columns as i32 - 4,
                 0i32..screen_size.rows as i32 - 12.max(self.keybinds.len() as i32 + 2),
             ),
+            &*self.tasks.past,
         )?;
         Ok(true)
     }
@@ -291,7 +292,12 @@ impl InterfaceState {
         }
 
         if was_task {
-            let song = Song::from_file(self.temp_meow_paths.choose(&mut rand::thread_rng()).unwrap(), None)?;
+            let song = Song::from_file(
+                self.temp_meow_paths
+                    .choose(&mut rand::thread_rng())
+                    .unwrap(),
+                None,
+            )?;
             self.player.play_song_next(&song, None)?;
         }
 

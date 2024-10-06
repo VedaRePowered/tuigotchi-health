@@ -35,6 +35,7 @@ use crossterm::{
 };
 use rand::{thread_rng, Rng};
 
+use crate::task_manager::TaskDue;
 use crate::{config::CharacterChoice, task::TaskType};
 
 #[derive(Debug)]
@@ -119,6 +120,9 @@ impl Animations {
             .map(|frames| frames.as_slice())
             .ok_or_eyre("No animation!")
             .or_else(|_| self.get(&anim.fallback()?))
+    }
+    fn get_raw(&self, anim: &LilGuyAnimation) -> Option<&[AnimationFrame]> {
+        self.anims.get(anim).map(|frames| frames.as_slice())
     }
 }
 
@@ -213,6 +217,7 @@ impl LilGuyState {
         happiness: f32,
         ongoing_task: Option<&TaskType>,
         room_bounds: (Range<i32>, Range<i32>),
+        wants: &[TaskDue],
     ) -> Result<()> {
         let now = Instant::now();
         let new_animation = if self.pos.0 < room_bounds.0.start {
@@ -225,7 +230,17 @@ impl LilGuyState {
             let sad_level = (((1.0 - happiness / 0.6) * (self.animations.max_sadness as f32 + 1.0))
                 .floor() as u32)
                 .clamp(0, 1);
-            Some(LilGuyAnimation::Sad(sad_level))
+
+            let anim = wants.iter().find_map(|t| {
+                self.animations
+                    .get_raw(&LilGuyAnimation::Want(t.ty.clone()))
+                    .map(|_| t.ty.clone())
+            });
+            if let Some(ty) = anim {
+                Some(LilGuyAnimation::Want(ty))
+            } else {
+                Some(LilGuyAnimation::Sad(sad_level))
+            }
         } else if self.idle_animation_change < Instant::now() {
             let mut rng = thread_rng();
             self.idle_animation_change =
