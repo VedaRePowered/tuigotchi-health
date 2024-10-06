@@ -15,10 +15,14 @@
 
 ** TODO
 + [ ] sounds
++ [ ] icon
 + [ ] use want animations
 + [ ] make ouppy
 + [ ] clear notifications
 + [ ] make UI look slightly nicer (less harsh colours for ui text)
 + [ ] pride flag themes
 + [ ] unlockables o.o
++ [ ] Lizard
++ [ ] Poop
++ [ ] Rename the guy
 
