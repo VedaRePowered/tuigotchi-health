@@ -16,7 +16,7 @@
 ** TODO
 + [x] sounds
 + [x] icon
-+ [ ] use want animations
++ [X] use want animations
 + [ ] make ouppy
 + [x] clear notifications
 + [ ] make UI look slightly nicer (less harsh colours for ui text)
