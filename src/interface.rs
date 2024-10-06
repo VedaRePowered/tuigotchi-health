@@ -31,7 +31,7 @@ use visual::LilGuyState;
 use crate::{
     config::Config,
     task::TaskType,
-    task_manager::{TaskManager, Tasks, TASK_THRESHOLD},
+    task_manager::{TaskManager, Tasks},
 };
 
 mod visual;
@@ -42,6 +42,8 @@ const NOTIFY_APPNAME: &'static str = "tamagotchi-health";
 pub struct InterfaceState {
     lil_guy: LilGuyState,
     tasks: Tasks,
+    task_timeout: Duration,
+    task_timeout_max: Duration,
 }
 
 impl InterfaceState {
@@ -50,8 +52,14 @@ impl InterfaceState {
         execute!(stdout, EnterAlternateScreen, Clear(ClearType::All))?;
         terminal::enable_raw_mode()?;
         Ok(InterfaceState {
-            lil_guy: LilGuyState::new(conf.character)?,
+            lil_guy: LilGuyState::new(
+                conf.character,
+                conf.colour,
+                conf.idle_animation_time_min..conf.idle_animation_time_max,
+            )?,
             tasks: Tasks::default(),
+            task_timeout: conf.task_timeout_max,
+            task_timeout_max: conf.task_timeout_max,
         })
     }
     /// Update the state of the interface, will run every ~100ms
@@ -88,7 +96,9 @@ impl InterfaceState {
                 .iter()
                 .map(|task| {
                     // This formula is not special its just a random thing I came up with
-                    ((now - task.when - TASK_THRESHOLD).num_seconds() as f32 / 60.0).sqrt()
+                    (((now - task.when).num_seconds() as f32 - self.task_timeout.as_secs_f32())
+                        / self.task_timeout_max.as_secs_f32())
+                    .sqrt()
                 })
                 .sum::<f32>()
                 .clamp(0.0, 1.0);

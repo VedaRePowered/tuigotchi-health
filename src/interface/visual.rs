@@ -28,7 +28,7 @@ use color_eyre::{
     eyre::{bail, OptionExt},
     Result,
 };
-use crossterm::{cursor::MoveTo, queue, style::Print};
+use crossterm::{cursor::MoveTo, queue, style::{self, Print}};
 use rand::{thread_rng, Rng};
 
 use crate::{config::CharacterChoice, task::TaskType};
@@ -36,10 +36,12 @@ use crate::{config::CharacterChoice, task::TaskType};
 #[derive(Debug)]
 pub struct LilGuyState {
     animations: Animations,
+    colour: [u8; 3],
     current_animation: LilGuyAnimation,
     animation_frame: usize,
     next_frame_time: Instant,
     idle_animation_change: Instant,
+    idle_animation_time: Range<Duration>,
     pos: (i32, i32),
 }
 
@@ -186,13 +188,15 @@ impl FromStr for LilGuyAnimation {
 }
 
 impl LilGuyState {
-    pub fn new(character: CharacterChoice) -> Result<Self> {
+    pub fn new(character: CharacterChoice, colour: [u8; 3], idle_animation_time: Range<Duration>) -> Result<Self> {
         Ok(LilGuyState {
             animations: Animations::load(character.get_animation_file())?,
+            colour,
             current_animation: LilGuyAnimation::Idle,
             animation_frame: 0,
             next_frame_time: Instant::now(),
             idle_animation_change: Instant::now(),
+            idle_animation_time,
             pos: (0, 0),
         })
     }
@@ -217,7 +221,7 @@ impl LilGuyState {
         } else if self.idle_animation_change < Instant::now() {
             let mut rng = thread_rng();
             self.idle_animation_change =
-                Instant::now() + Duration::from_secs_f32(rng.gen_range(1.0..5.0));
+                Instant::now() + rng.gen_range(self.idle_animation_time.clone());
             // FIXME: I don't like this but eh I'll fix it later...
             if rng.gen_ratio(1, 3) {
                 self.current_animation = if rng.gen_bool(0.5) {
@@ -248,6 +252,10 @@ impl LilGuyState {
         let pos = (center.0 + self.pos.0, center.1 + self.pos.1);
         let frame = &self.animations.get(&self.current_animation)?[self.animation_frame];
         let y_offset = self.animations.max_bounds.1 as i32 - frame.lines.len() as i32;
+        queue!(writer, style::SetColors(style::Colors {
+            foreground: Some(style::Color::Rgb { r: self.colour[0], g: self.colour[1], b: self.colour[2] }),
+            background: None
+        }))?;
         for (y, line) in frame.lines.iter().enumerate() {
             queue!(
                 writer,
@@ -258,6 +266,7 @@ impl LilGuyState {
                 Print(line),
             )?;
         }
+        queue!(writer, style::ResetColor)?;
         Ok(())
     }
 }

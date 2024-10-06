@@ -34,7 +34,7 @@ pub struct Config {
     pub idle_animation_time_min: Duration,
     #[serde(with = "humantime_serde")]
     pub idle_animation_time_max: Duration,
-    colour: [u8; 3],
+    pub colour: [u8; 3],
     pub tasks: Vec<Task>,
 }
 

@@ -23,10 +23,9 @@ use crate::task::{Task, TaskType};
 
 use color_eyre::Result;
 
-pub const TASK_THRESHOLD: Duration = Duration::minutes(30);
-
 pub struct TaskManager {
     tasks: Vec<Task>,
+    task_threshold: Duration,
 }
 
 #[derive(Debug, PartialEq)]
@@ -43,10 +42,11 @@ pub struct Tasks {
 }
 
 impl TaskManager {
-    pub fn new(config: &mut Config) -> Self {
-        Self {
+    pub fn new(config: &mut Config) -> Result<Self> {
+        Ok(Self {
             tasks: std::mem::replace(&mut config.tasks, vec![]),
-        }
+            task_threshold: Duration::from_std(config.task_timeout)?,
+        })
     }
 
     pub fn get_tasks(&self, now: DateTime<Local>) -> Result<Tasks> {
@@ -55,8 +55,6 @@ impl TaskManager {
             current: vec![],
             upcoming: vec![],
         };
-
-        let now = Local::now();
 
         for task in &self.tasks {
             let task_due = TaskDue {
@@ -70,7 +68,7 @@ impl TaskManager {
 
             if task_due.when > now {
                 tasks.upcoming.push(task_due);
-            } else if now - task_due.when < TASK_THRESHOLD {
+            } else if now - task_due.when < self.task_threshold {
                 tasks.current.push(task_due);
             } else {
                 tasks.past.push(task_due);
