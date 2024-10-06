@@ -4,7 +4,7 @@ task_timeout_max: 60min
 idle_animation_time_min: 5sec
 idle_animation_time_max: 30sec
 colour: Magenta
-text_colour: Grey
+text_colour: DarkGrey
 task_colour: Yellow
 task_animation_duration: 5sec
 tasks:
