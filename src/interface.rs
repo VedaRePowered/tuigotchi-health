@@ -151,7 +151,6 @@ impl InterfaceState {
                         self.notifications.retain_mut(|(ty, notif)| {
                             if ty == &task_type {
                                 if let Some(notif) = notif.take() {
-                                    log::info!("Closing notification: {notif:?}");
                                     notif.close();
                                 }
                                 false
@@ -204,11 +203,19 @@ impl InterfaceState {
                     // This formula is not special its just a random thing I came up with
                     (((now - task.when).num_seconds() as f32 - self.task_timeout.as_secs_f32())
                         / self.task_timeout_max.as_secs_f32())
+                    .max(0.0)
                     .sqrt()
                 })
                 .sum::<f32>()
                 .clamp(0.0, 1.0);
-        self.mood = if happiness > 0.6 { "Happy" } else { "Sad" };
+        self.mood = match happiness {
+            ..=0.1 => "Very Sad",
+            0.1..=0.4 => "Sad",
+            0.4..=0.6 => "Neutral",
+            0.6..=0.9 => "Happy",
+            0.9.. => "Very Happy",
+            _ => "Unknown",
+        };
 
         let screen_size = terminal::window_size()?;
         self.lil_guy.update(

@@ -14,11 +14,11 @@
 + Keyboard shortcuts for tasks
 
 ** TODO
-+ [ ] sounds
++ [x] sounds
 + [x] icon
 + [ ] use want animations
 + [ ] make ouppy
-+ [ ] clear notifications
++ [x] clear notifications
 + [ ] make UI look slightly nicer (less harsh colours for ui text)
 + [ ] pride flag themes
 + [ ] unlockables o.o
