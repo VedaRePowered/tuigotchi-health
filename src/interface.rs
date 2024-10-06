@@ -34,7 +34,11 @@ use crossterm::{
 };
 use lil_guy::LilGuyState;
 use log::info;
-use notify_rust::{Hint, NotificationHandle, Urgency};
+#[cfg(target_os = "linux")]
+use notify_rust::NotificationHandle;
+use notify_rust::{Hint, Urgency};
+#[cfg(not(target_os = "linux"))]
+type NotificationHandle = ();
 use playback_rs::{Player, Song};
 use rand::{self, seq::SliceRandom};
 
@@ -154,6 +158,7 @@ impl InterfaceState {
                         self.notifications.retain_mut(|(ty, notif)| {
                             if ty == &task_type {
                                 if let Some(notif) = notif.take() {
+                                    #[cfg(target_os = "linux")]
                                     notif.close();
                                 }
                                 false
@@ -220,13 +225,13 @@ impl InterfaceState {
             _ => "Unknown".with(style::Color::Magenta),
         };
 
-        let screen_size = terminal::window_size()?;
+        let screen_size = terminal::size()?;
         self.lil_guy.update(
             happiness,
             self.current_task_animation.as_ref().map(|ta| &ta.0),
             (
-                0i32..screen_size.columns as i32 - 4,
-                0i32..screen_size.rows as i32 - 12.max(self.keybinds.len() as i32 + 2),
+                0i32..screen_size.0 as i32 - 4,
+                0i32..screen_size.1 as i32 - 12.max(self.keybinds.len() as i32 + 2),
             ),
             &self.tasks.past,
         )?;
@@ -234,7 +239,7 @@ impl InterfaceState {
     }
     /// Render the interface
     pub fn render(&self, writer: &mut impl Write) -> Result<()> {
-        let screen_size = terminal::window_size()?;
+        let screen_size = terminal::size()?;
         let text_height = 12.max(self.keybinds.len() as i32 + 2);
         queue!(writer, Clear(ClearType::All))?;
         queue!(
@@ -245,19 +250,19 @@ impl InterfaceState {
             Print(".".with(self.text_colour)),
         )?;
         self.lil_guy
-            .render(writer, (2, screen_size.rows as i32 - text_height))?;
+            .render(writer, (2, screen_size.1 as i32 - text_height))?;
         queue!(
             writer,
-            MoveTo(3, screen_size.rows - text_height as u16),
+            MoveTo(3, screen_size.1 - text_height as u16),
             Print(
-                "=".repeat(screen_size.columns as usize - 6)
+                "=".repeat(screen_size.0 as usize - 6)
                     .with(self.text_colour)
             )
         )?;
         for (i, (keybind, task_type)) in self.keybinds.iter().enumerate() {
             queue!(
                 writer,
-                MoveTo(10, i as u16 + screen_size.rows - text_height as u16 + 1),
+                MoveTo(10, i as u16 + screen_size.1 - text_height as u16 + 1),
                 Print(" - ".with(self.text_colour)),
                 Print(task_type.to_string().with(self.task_colour)),
                 Print(" Press '".with(self.text_colour)),
@@ -278,22 +283,19 @@ impl InterfaceState {
         let mut was_task = false;
 
         for task in tasks {
-            self.notifications.push((
-                task.clone(),
-                Some(
-                    notify_rust::Notification::new()
-                        .summary(&format!("{}", task))
-                        .appname(NOTIFY_APPNAME)
-                        .timeout(Duration::from_secs(60))
-                        .hint(Hint::Urgency(if is_priority {
-                            Urgency::Critical
-                        } else {
-                            Urgency::Normal
-                        }))
-                        .icon(&self.temp_icon_path.to_string_lossy())
-                        .show()?,
-                ),
-            ));
+            let mut notif = notify_rust::Notification::new()
+                .summary(&format!("{}", task))
+                .appname(NOTIFY_APPNAME)
+                .timeout(Duration::from_secs(60))
+                .icon(&self.temp_icon_path.to_string_lossy())
+                .finalize();
+            #[cfg(target_os = "linux")]
+            let notif = notif.hint(Hint::Urgency(if is_priority {
+                Urgency::Critical
+            } else {
+                Urgency::Normal
+            }));
+            self.notifications.push((task.clone(), Some(notif.show()?)));
 
             was_task = true;
         }
