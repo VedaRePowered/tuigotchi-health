@@ -1,4 +1,5 @@
 #![feature(btree_cursors)]
+#![feature(extract_if)]
 /*
 This file is part of Tuigotchi Health.
 

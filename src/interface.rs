@@ -33,12 +33,10 @@ use crossterm::{
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use lil_guy::LilGuyState;
-use log::{info, warn};
-#[cfg(target_os = "linux")]
+use log::info;
+#[cfg(all(unix, not(target_os = "macos")))]
 use notify_rust::NotificationHandle;
 use notify_rust::{Hint, Urgency};
-#[cfg(not(target_os = "linux"))]
-type NotificationHandle = ();
 use playback_rs::{Player, Song};
 use rand::{self, seq::SliceRandom};
 
@@ -64,7 +62,8 @@ pub struct InterfaceState {
     mood: StyledContent<&'static str>,
     char_name: String,
     temp_icon_path: PathBuf,
-    notifications: Vec<(TaskType, Option<NotificationHandle>)>,
+    #[cfg(all(unix, not(target_os = "macos")))]
+    notifications: Vec<(TaskType, NotificationHandle)>,
     temp_meow_paths: Vec<PathBuf>,
     player: Player,
     text_colour: crossterm::style::Color,
@@ -103,6 +102,7 @@ impl InterfaceState {
             mood: "".with(style::Color::Grey),
             char_name: conf.character_name().to_string(),
             temp_icon_path,
+            #[cfg(all(unix, not(target_os = "macos")))]
             notifications: Vec::new(),
             temp_meow_paths: vec![temp_meow1_path, temp_meow2_path],
             player: Player::new(None)?,
@@ -155,17 +155,10 @@ impl InterfaceState {
                     if let Some(task_type) = self.keybinds.remove(&key) {
                         task_manager.complete_tasks(&task_type, now);
                         // This would be so much nicer if retain was still drain_filter...
-                        self.notifications.retain_mut(|(ty, notif)| {
-                            if ty == &task_type {
-                                if let Some(notif) = notif.take() {
-                                    #[cfg(target_os = "linux")]
-                                    notif.close();
-                                }
-                                false
-                            } else {
-                                true
-                            }
-                        });
+                        #[cfg(all(unix, not(target_os = "macos")))]
+                        self.notifications
+                            .extract_if(|(ty, _)| ty == &task_type)
+                            .for_each(|(_, n)| n.close());
                         self.task_animations.push_back(task_type);
                     }
                 }
@@ -289,13 +282,17 @@ impl InterfaceState {
                 .timeout(Duration::from_secs(60))
                 .icon(&self.temp_icon_path.to_string_lossy())
                 .finalize();
-            #[cfg(target_os = "linux")]
+            #[cfg(all(unix, not(target_os = "macos")))]
             let notif = notif.hint(Hint::Urgency(if is_priority {
                 Urgency::Critical
             } else {
                 Urgency::Normal
             }));
-            self.notifications.push((task.clone(), Some(notif.show()?)));
+
+            let handle = notif.show()?;
+
+            #[cfg(all(unix, not(target_os = "macos")))]
+            self.notifications.push((task.clone(), handle));
 
             was_task = true;
         }
@@ -319,10 +316,9 @@ impl Drop for InterfaceState {
     /// notifications.
     fn drop(&mut self) {
         // Try to dismiss all notifications
-        for (_, n) in self.notifications {
-            if let Some(n) = n {
-                n.close();
-            }
+        #[cfg(all(unix, not(target_os = "macos")))]
+        for (_, n) in self.notifications.drain(..) {
+            n.close();
         }
 
         let _ = execute!(
