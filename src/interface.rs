@@ -36,6 +36,7 @@ use lil_guy::LilGuyState;
 use log::info;
 #[cfg(all(unix, not(target_os = "macos")))]
 use notify_rust::NotificationHandle;
+#[cfg(all(unix, not(target_os = "macos")))]
 use notify_rust::{Hint, Urgency};
 use playback_rs::{Player, Song};
 use rand::{self, seq::SliceRandom};
@@ -268,6 +269,9 @@ impl InterfaceState {
     }
 
     /// Send a notification and play a sound for a task
+    // Some things go unused on non-Unix platforms due to missing
+    // features
+    #[cfg_attr(not(all(unix, not(target_os = "macos"))), allow(unused_mut, unused_variables))]
     fn notify_tasks(
         &mut self,
         tasks: impl Iterator<Item = TaskType>,
@@ -289,6 +293,9 @@ impl InterfaceState {
                 Urgency::Normal
             }));
 
+
+            // Notification handle is unused on non-Unix platforms
+            #[cfg_attr(not(all(unix, not(target_os = "macos"))), allow(unused_variables))]
             let handle = notif.show()?;
 
             #[cfg(all(unix, not(target_os = "macos")))]
