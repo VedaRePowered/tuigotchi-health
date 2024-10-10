@@ -33,7 +33,7 @@ use crossterm::{
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use lil_guy::LilGuyState;
-use log::info;
+use log::{info, warn};
 #[cfg(target_os = "linux")]
 use notify_rust::NotificationHandle;
 use notify_rust::{Hint, Urgency};
@@ -315,8 +315,16 @@ impl InterfaceState {
 }
 
 impl Drop for InterfaceState {
-    /// Finialize the interface, reset the terminal state
+    /// Finialize the interface, reset the terminal state, destroy all
+    /// notifications.
     fn drop(&mut self) {
+        // Try to dismiss all notifications
+        for (_, n) in self.notifications {
+            if let Some(n) = n {
+                n.close();
+            }
+        }
+
         let _ = execute!(
             std::io::stdout(),
             Clear(ClearType::All),
